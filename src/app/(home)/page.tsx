@@ -46,16 +46,16 @@ export default function HomePage() {
             <li className=''>
               <h3 className='text-fd-muted-foreground'>Community</h3>
               <ul className='flex flex-col gap-1 mt-6'>
-                <li><a href="https://www.youtube.com/@pocketbytetechnology">YouTube</a></li> 
-                <li><a href="https://discord.com/invite/6gWzPWpY5w">Discord</a></li> 
-                <li><a href="https://discord.com/invite/6gWzPWpY5w">Reddit</a></li> 
-                <li><a href="https://github.com/PocketByteTechnology">GitHub</a></li> 
+                <li><a href="https://www.youtube.com/@pocketbytetechnology" target='_blank'>YouTube</a></li> 
+                <li><a href="https://discord.com/invite/6gWzPWpY5w" target='_blank'>Discord</a></li> 
+                <li><a href="https://discord.com/invite/6gWzPWpY5w" target='_blank'>Reddit</a></li> 
+                <li><a href="https://github.com/PocketByteTechnology" target='_blank'>GitHub</a></li> 
               </ul>
             </li>
             <li className=''>
               <h3 className='text-fd-muted-foreground'>Explore</h3>
                 <ul className='flex flex-col gap-1 mt-6'>
-                <li><Link href="/docs">Docs</Link></li> 
+                <li><Link href="/docs" target='_blank'>Docs</Link></li> 
               </ul>
             </li>
           </div>
