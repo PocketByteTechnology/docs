@@ -1,0 +1,19 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+
+/* Light theme colors */
+@theme {
+    --color-fd-accent-foreground: hsl(42, 95.65%, 54.9%);
+    --color-fd-primary: hsl(42, 95.65%, 54.9%);
+}
+
+/* Dark theme colors */
+.dark {
+    --color-fd-accent-foreground: hsl(42, 95.65%, 54.9%);
+    --color-fd-primary: hsl(42, 95.65%, 54.9%);
+}
+
+/* #nd-nav > div {
+    background-color: #fab81e;
+} */

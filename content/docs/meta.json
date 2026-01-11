@@ -1,0 +1,9 @@
+{
+    "title": "Introduction",
+    "description": "Your first look at the PocketByte SDK",
+    "pages": [
+        "---Getting Started---",
+        "./index",
+        "./installation"
+    ]
+}
