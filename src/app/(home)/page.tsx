@@ -36,14 +36,14 @@ export default function HomePage() {
       <div className='max-w-4xl w-full mb-24 rounded-xl place-self-center'>
         <h2 className='text-3xl md:text-4xl font-bold text-center mb-4'>Change it Up!</h2>
         <p className="text-lg md:text-2xl text-fd-muted-foreground mb-8 text-center">Connect a diverse variety of modules to the extension port. Swap your controls or add new features.</p>
-      </div>
+      </div>*/}
 
       <div className='w-full bg-fd-primary-foreground mb-24 p-24'>
         <div className='ml-auto mr-auto w-max'>
           <Quote size={30} color='#fab81e'/>
           <p className='text-2xl italic font-light mt-4'>We made PocketByte because ain't nobody got the patience for AAA. <br/>Let's bring the passion back to casual gaming!</p> 
         </div>
-      </div> */}
+      </div>
 
       <div className='place-self-center max-w-4xl w-full mb-24 px-4 md:px-0'>
         <h2 className='text-3xl md:text-4xl font-bold text-center mb-4'>FAQ</h2>
