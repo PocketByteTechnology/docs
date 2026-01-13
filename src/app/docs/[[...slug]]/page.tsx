@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { getMDXComponents } from '@/mdx-components';
 import type { Metadata } from 'next';
 import { createRelativeLink } from 'fumadocs-ui/mdx';
+import { Pencil } from 'lucide-react';
 
 export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
   const params = await props.params;
@@ -24,6 +25,16 @@ export default async function Page(props: PageProps<'/docs/[[...slug]]'>) {
           })}
         />
       </DocsBody>
+      <br/>
+        <a
+        href={`https://github.com/PocketByteTechnology/docs/blob/main/content/docs/${page.path}`}
+        rel="noreferrer noopener"
+        target="_blank"
+        className="flex place-items-center gap-2 w-fit border rounded-xl p-2 font-medium text-sm text-fd-secondary-foreground bg-fd-secondary transition-colors hover:text-fd-accent-foreground hover:bg-fd-accent"
+      >
+        <Pencil size={20} />
+        Edit this page
+      </a> 
     </DocsPage>
   );
 }
