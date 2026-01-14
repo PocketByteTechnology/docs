@@ -19,10 +19,6 @@ export default function HomePage() {
         <Image src="/assets/PocketByteREV2Top.png" width={500} height={500} alt="PocketByte REV2 top render" />
         <Image src="/assets/PocketByteREV2Bottom.png" width={500} height={500} alt="PocketByte REV2 bottom render" />
       </div>
-      {/* <div className="text-center max-w-4xl ml-auto mr-auto">
-        <h1 className="text-6xl font-bold mb-4">The Indie Game Console for Makers</h1>
-        <p className="text-3xl">Create your own games to share with the community and download a plethora of apps built by others.</p>
-      </div> */}
 
       {/* <div className='max-w-4xl w-full mb-24 rounded-xl place-self-center'>
         <h2 className='text-3xl md:text-4xl font-bold text-center mb-4'>Make it Yours</h2>
@@ -41,7 +37,7 @@ export default function HomePage() {
       <div className='w-full bg-fd-primary-foreground mb-24 p-24'>
         <div className='ml-auto mr-auto w-max'>
           <Quote size={30} color='#fab81e'/>
-          <p className='text-2xl italic font-light mt-4'>We made PocketByte because ain't nobody got the patience for AAA. <br/>Let's bring the passion back to casual gaming!</p> 
+          <p className='text-2xl italic font-light mt-4'>We made PocketByte because we're tired of AAA. <br/>Let's bring the passion back to casual gaming!</p>
         </div>
       </div>
 
@@ -74,16 +70,16 @@ export default function HomePage() {
             <li className=''>
               <h3 className='text-fd-muted-foreground'>Community</h3>
               <ul className='flex flex-col gap-1 mt-6'>
-                <li><a href="https://www.youtube.com/@pocketbytetechnology" target='_blank'>YouTube</a></li> 
-                <li><a href="https://discord.com/invite/6gWzPWpY5w" target='_blank'>Discord</a></li> 
-                <li><a href="https://discord.com/invite/6gWzPWpY5w" target='_blank'>Reddit</a></li> 
-                <li><a href="https://github.com/PocketByteTechnology" target='_blank'>GitHub</a></li> 
+                <li><a href="https://www.youtube.com/@pocketbytetechnology" target='_blank'>YouTube</a></li>
+                <li><a href="https://discord.com/invite/6gWzPWpY5w" target='_blank'>Discord</a></li>
+                <li><a href="https://discord.com/invite/6gWzPWpY5w" target='_blank'>Reddit</a></li>
+                <li><a href="https://github.com/PocketByteTechnology" target='_blank'>GitHub</a></li>
               </ul>
             </li>
             <li className=''>
               <h3 className='text-fd-muted-foreground'>Explore</h3>
                 <ul className='flex flex-col gap-1 mt-6'>
-                <li><Link href="/docs" target='_blank'>Docs</Link></li> 
+                <li><Link href="/docs" target='_blank'>Docs</Link></li>
               </ul>
             </li>
           </div>
