@@ -4,14 +4,14 @@
 
 /* Light theme colors */
 @theme {
-    --color-fd-accent-foreground: hsl(42, 95.65%, 54.9%);
-    --color-fd-primary: hsl(42, 95.65%, 54.9%);
+    /* --color-fd-accent-foreground: hsl(42, 95.65%, 34.9%); */
+    /* --color-fd-primary: hsl(42, 95.65%, 54.9%); */
 }
 
 /* Dark theme colors */
 .dark {
-    --color-fd-accent-foreground: hsl(42, 95.65%, 54.9%);
-    --color-fd-primary: hsl(42, 95.65%, 54.9%);
+    /* --color-fd-accent-foreground: hsl(42, 95.65%, 54.9%); */
+    /* --color-fd-primary: hsl(42, 95.65%, 54.9%); */
 }
 
 /* #nd-nav > div {

@@ -15,12 +15,12 @@ export default function Layout({ children }: LayoutProps<'/'>) {
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="apple-mobile-web-app-title" content="PocketByte" />
-        <title>PocketByte | Indie Video Game Console</title>
-        <meta name="description" content="A handheld video game console for small, fun games that live in your pocket. Authentic experiences for casual gamers; infinite options for game developers." />
+        <title>PocketByte Developer</title>
+        <meta name="description" content="Developer site for PocketByte, a handheld video game console for small, fun games that live in your pocket. Authentic experiences for casual gamers; infinite options for game developers." />
         <meta name="author" content="PocketByte" />
 
-        <meta property="og:title" content="PocketByte | Indie Video Game Console" />
-        <meta property="og:description" content="A handheld video game console for small, fun games that live in your pocket. Authentic experiences for casual gamers; infinite options for game developers." />
+        <meta property="og:title" content="PocketByte Developer" />
+        <meta property="og:description" content="Developer site for PocketByte, handheld video game console for small, fun games that live in your pocket. Authentic experiences for casual gamers; infinite options for game developers." />
         <meta property="og:type" content="website" />
         <meta property="og:image" content="CHANGE LATER" />
 
@@ -31,7 +31,8 @@ export default function Layout({ children }: LayoutProps<'/'>) {
         <meta name="apple-mobile-web-app-title" content="PocketByte" />
       <body className="flex flex-col min-h-screen">
         <Banner>🎉 DevKits launching soon! Join our Discord server or email newsletter for updates. 🎉</Banner>
-        <RootProvider theme={{defaultTheme: "dark"}}>{children}</RootProvider>
+        {/* <RootProvider theme={{defaultTheme: "dark"}}>{children}</RootProvider> */}
+        <RootProvider>{children}</RootProvider>
         <Analytics />
       </body>
     </html>
