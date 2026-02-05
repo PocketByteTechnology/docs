@@ -30,7 +30,7 @@ export default function Layout({ children }: LayoutProps<'/'>) {
       </head>
         <meta name="apple-mobile-web-app-title" content="PocketByte" />
       <body className="flex flex-col min-h-screen">
-        <Banner>🎉 DevKits launching soon! Join our Discord server or email newsletter for updates. 🎉</Banner>
+        <Banner>🎉 LIMITED EDITION DevKits launching soon! Join our Discord server or email newsletter for updates. 🎉</Banner>
         {/* <RootProvider theme={{defaultTheme: "dark"}}>{children}</RootProvider> */}
         <RootProvider>{children}</RootProvider>
         <Analytics />
