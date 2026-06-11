@@ -1,0 +1,150 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "luma",
+  "name": "Pocketbyte",
+  "colors": {
+    "primary": "#fab81e",
+    "light": "#8c6c25",
+    "dark": "#363533"
+  },
+  "favicon": "https://media.brand.dev/da6bc8bf-1a47-47e3-aa37-ef973b702f34.png",
+  "logo": {
+    "light": "https://media.brand.dev/11a134b8-d53a-4ffc-ae76-f3a5a6f6fb13.svg",
+    "dark": "https://media.brand.dev/8e98ea20-8478-4961-9801-e0a6b4e747ba.png"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "Main Website",
+        "href": "https://pocketbyte.co"
+      }
+    ],
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/PocketByteTechnology"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "development-setup",
+              "hardware-overview"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/architecture",
+              "concepts/display",
+              "concepts/input",
+              "concepts/audio"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/first-program",
+              "guides/handling-input",
+              "guides/drawing-graphics",
+              "guides/playing-audio"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/project-setup",
+              "configuration/build-flash"
+            ]
+          },
+          {
+            "group": "Help",
+            "pages": [
+              "troubleshooting",
+              "faq"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api/overview"
+            ]
+          },
+          {
+            "group": "Display",
+            "pages": [
+              "api/display/init",
+              "api/display/drawing",
+              "api/display/sprites"
+            ]
+          },
+          {
+            "group": "Input",
+            "pages": [
+              "api/input/buttons",
+              "api/input/modules"
+            ]
+          },
+          {
+            "group": "Audio",
+            "pages": [
+              "api/audio/playback"
+            ]
+          },
+          {
+            "group": "System",
+            "pages": [
+              "api/system/lifecycle",
+              "api/system/storage"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/PocketByteTechnology",
+      "discord": "https://discord.com/invite/6gWzPWpY5w",
+      "youtube": "https://www.youtube.com/@pocketbytetechnology",
+      "website": "https://pocketbyte.co",
+      "reddit": "https://www.reddit.com/r/pocketbyte"
+    }
+  },
+  "fonts": {
+    "heading": {
+      "family": "Montserrat",
+      "weight": 500
+    },
+    "body": {
+      "family": "Inter"
+    }
+  },
+  "banner": {
+    "content": "Limited edition DevKits launching soon! Join Discord for more info."
+  },
+  "metadata": {
+    "timestamp": true
+  },
+  "icons": {
+    "library": "lucide"
+  },
+  "styling": {
+    "eyebrows": "breadcrumbs"
+  },
+  "seo": {
+    "indexing": "navigable"
+  },
+  "redirects": []
+}

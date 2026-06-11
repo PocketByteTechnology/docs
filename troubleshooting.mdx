@@ -1,0 +1,203 @@
+---
+title: "Troubleshooting Common Pocketbyte Development Issues"
+sidebarTitle: "Troubleshooting"
+description: "Diagnose and fix common Pocketbyte SDK problems including build failures, flash errors, blank display, silent audio, and unresponsive input."
+---
+
+Most issues you encounter during Pocketbyte development fall into a small set of categories: environment setup, build configuration, hardware connectivity, and incorrect API call order. This page covers the most common problems along with the specific steps needed to resolve each one.
+
+<Note>
+Always check serial monitor output first. Run `idf.py -p PORT monitor` (or `idf.py -p PORT flash monitor` to flash and monitor in one step) and look for ESP-IDF error codes, assertion failures, and backtraces — they usually point directly at the root cause.
+</Note>
+
+<AccordionGroup>
+
+<Accordion title="Build fails: component not found">
+The build system cannot locate the `omrawaley/pocketbyte` component. This usually means the component has not been downloaded yet, or the `idf_component.yml` file is missing or malformed.
+
+**Steps to fix:**
+
+1. Confirm that `main/idf_component.yml` exists and contains a valid dependency declaration:
+
+```yaml
+dependencies:
+  omrawaley/pocketbyte: ">=0.3.0"
+  idf: ">=5.0.0"
+```
+
+2. Run the dependency resolver explicitly:
+
+```bash
+idf.py update-dependencies
+```
+
+3. If the error persists, delete the `managed_components/` directory and try again:
+
+```bash
+rm -rf managed_components/
+idf.py update-dependencies
+idf.py build
+```
+
+4. Make sure you have an active internet connection the first time you build — the component manager must download the SDK from the IDF Component Registry.
+</Accordion>
+
+<Accordion title="Flash fails: port not found or permission denied">
+`idf.py flash` reports that the specified port does not exist or that access is denied.
+
+**Port not found:**
+
+- Verify the device is connected via a USB data cable (not a charge-only cable).
+- Run the following to list available ports, then match your device:
+
+```bash
+# Linux / macOS
+ls /dev/tty*
+
+# Windows (PowerShell)
+Get-PnpDevice -Class Ports
+```
+
+- Common port names: `/dev/ttyUSB0`, `/dev/ttyACM0` (Linux), `/dev/cu.usbserial-*` (macOS), `COM3` (Windows).
+
+**Permission denied (Linux):**
+
+Your user account is not a member of the `dialout` group, which owns the serial port device.
+
+```bash
+sudo usermod -aG dialout $USER
+```
+
+Log out and back in (or run `newgrp dialout`) for the group change to take effect. Then retry the flash command.
+</Accordion>
+
+<Accordion title="Device not entering flash mode">
+The flash command hangs at "Connecting..." and eventually times out, meaning Pocketbyte is not entering the ROM bootloader's download mode.
+
+**Manual method:**
+
+1. Hold the **BOOT** button on the device.
+2. While holding BOOT, press and release the **RESET** button.
+3. Release the BOOT button.
+4. Run `idf.py -p PORT flash` immediately.
+
+**Plug-in method (if no RESET button is accessible):**
+
+1. Hold the **BOOT** button.
+2. Plug the USB cable in while holding BOOT.
+3. Release the BOOT button.
+4. Run `idf.py -p PORT flash`.
+
+If the device still does not enter flash mode, try a different USB cable or USB port on your computer. Some USB hubs or cables lack the data lines needed for serial communication.
+</Accordion>
+
+<Accordion title="Display stays blank after flashing">
+The firmware flashes successfully and the device boots, but the screen remains blank.
+
+**Most common causes and fixes:**
+
+1. **`pocketbyte_init()` not called** — this function must be the first Pocketbyte call in `app_main()` before any display, audio, or input functions:
+
+```c
+void app_main(void) {
+    pocketbyte_init();
+    // ... rest of your initialisation
+}
+```
+
+2. **`pocketbyte_display_flush()` not called** — drawing functions write to an off-screen buffer. Nothing appears on screen until you flush the buffer:
+
+```c
+while (true) {
+    pocketbyte_display_clear();
+    // ... your drawing calls ...
+    pocketbyte_display_flush();  // <-- required every frame
+}
+```
+
+3. **Incorrect display rotation in `menuconfig`** — open `idf.py menuconfig`, navigate to **Component config → Pocketbyte → Display rotation**, and verify the rotation matches your hardware orientation.
+
+Check the serial monitor output for any initialisation errors reported by the display driver.
+</Accordion>
+
+<Accordion title="No audio output">
+The device runs but produces no sound even when your code calls audio playback functions.
+
+**Checklist:**
+
+1. Confirm `pocketbyte_audio_init()` is called before any audio playback functions:
+
+```c
+void app_main(void) {
+    pocketbyte_init();
+    pocketbyte_audio_init();
+    // ...
+}
+```
+
+2. Check that the volume is not set to zero. The default volume is configured in `menuconfig` (**Component config → Pocketbyte → Default audio volume**). You can also set it at runtime:
+
+```c
+pocketbyte_audio_set_volume(80);  // 0–100
+```
+
+3. Verify the speaker or audio output hardware is connected properly if you are working with a custom build.
+
+4. Check the serial monitor for errors from the audio driver at boot time.
+</Accordion>
+
+<Accordion title="Input not responding">
+Button presses or joystick movements have no effect in your app.
+
+**Most common causes:**
+
+1. **`pocketbyte_input_update()` not called each frame** — the input system does not poll hardware automatically. You must call this function at the start of every game loop iteration before reading any button or axis state:
+
+```c
+while (true) {
+    pocketbyte_input_update();  // <-- must be called every frame
+
+    if (pocketbyte_input_button_pressed(POCKETBYTE_BUTTON_A)) {
+        // handle input
+    }
+
+    pocketbyte_display_flush();
+}
+```
+
+2. **Input module not fully seated** — remove the input module and reinsert it firmly until it clicks into place. A partially connected module may not be detected correctly.
+
+3. **Wrong module type in `menuconfig`** — if you set a manual input module override, verify it matches the module you have installed. Switch back to **Auto-detect** if unsure.
+</Accordion>
+
+<Accordion title="App crashes or resets in a loop">
+The device boots, runs briefly, then resets repeatedly. The serial monitor shows a crash backtrace or a `Guru Meditation Error`.
+
+**Debugging steps:**
+
+1. **Read the backtrace** — open the serial monitor (`idf.py -p PORT monitor`) and let the device crash. The monitor decodes the backtrace and shows the source file and line number of the crash.
+
+2. **Stack overflow** — if the backtrace shows `Task stack overflow` or `configCHECK_FOR_STACK_OVERFLOW`, increase the stack size of the offending task. For `app_main`, set a larger stack in `menuconfig` under **Component config → ESP System Settings → Main task stack size**.
+
+3. **Null pointer dereference** — look for any pointers you use before initialising them. Common culprits: forgetting `pocketbyte_init()` before using SDK handles, or storing the return value of a function that can return `NULL` on failure without checking it.
+
+4. **Watchdog timeout** — if your game loop blocks for too long without yielding, the task watchdog resets the device. Add a small `vTaskDelay(pdMS_TO_TICKS(1))` at the end of your loop if you are not using `pocketbyte_display_flush()` as a natural yield point.
+</Accordion>
+
+<Accordion title="menuconfig options not visible">
+The Pocketbyte settings do not appear under **Component config** in `menuconfig`.
+
+This happens when `menuconfig` is opened before the component has been downloaded and its `Kconfig` file registered with the build system.
+
+**Fix:**
+
+```bash
+idf.py update-dependencies
+idf.py reconfigure
+idf.py menuconfig
+```
+
+Running `idf.py reconfigure` re-runs CMake, which picks up the newly downloaded component and registers its Kconfig options. After that, the **Pocketbyte** submenu appears under **Component config**.
+</Accordion>
+
+</AccordionGroup>

@@ -1,0 +1,61 @@
+---
+title: "Meet Pocketbyte"
+sidebarTitle: "Introduction"
+description: "Learn what it is, who it's for, and how to get building."
+---
+
+Pocketbyte is a handheld indie computer built on the ESP32-S3 microcontroller. It features a built-in ST7789 display, stereo audio output w/ headphone jack, USB-C 2.0 connectivity, and — most distinctively — a swappable input module system that lets you attach different physical controllers to suit your game or application. 
+
+Instead of locking you into a fixed button layout, Pocketbyte is designed to be hacked, reprogrammed, and reimagined. The software you run on it is entirely your own. And you are free to build your own controller modules, too.
+
+## Who It's For
+
+Pocketbyte is built for people who want to make things, and also have fun! You'll find it a great fit if you are:
+
+- An **indie game developer** looking for a tangible, portable target platform to create original games on real hardware. No Unity here.
+- A **student or self-directed learner** exploring embedded systems, C programming, or game development in a hands-on environment.
+- A **maker or engineer** who wants to build interactive devices — not just games, but tools, toys, and experiments — using a purpose-built portable platform.
+- A **digital minimalist or tech enthusiast** who wants a cool, playful, multi-functional device for their every day carry. Possibly to play music or write notes.
+
+## What You Can Build
+
+Because Pocketbyte is open-source, your software is only limited by the hardware capabilities and your imagination. Common use cases include:
+
+- **Games** — arcade-style games, puzzle games, platformers, top-down games, turn-based games, or really anything! 3D graphics are also possible thanks to our friends in the UK.
+- **Interactive apps** — utilities, graphing calculators, music sequencers, text editors, wireless messaging platforms, or any application that benefits from a small portable form factor.
+- **Educational tools** — interactive demos, simulations, or learning aids that you can carry around and share.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Swappable Controller Modules" icon="puzzle">
+    Attach different physical input modules to change your control scheme — a d-pad, Blackberry keyboard, or custom layouts — without changing your device.
+  </Card>
+
+  <Card title="C Library" icon="file-code-corner">
+    Write your games and apps in C using the official Pocketbyte library. The API covers display, input, audio, and much more.
+  </Card>
+
+  <Card title="ESP-IDF Integration" icon="plug">
+    The Pocketbyte library is an ESP-IDF managed component. Add it to any IDF project with one command and use the full power of the ESP-IDF ecosystem.
+  </Card>
+
+  <Card title="Open Platform" icon="lock-open">
+    You control the software entirely. There is no locked bootloader, no mandatory storefront — flash whatever you build directly to the device.
+  </Card>
+</CardGroup>
+
+<Note>
+  Pocketbyte runs on the ESP32-S3, a dual-core Xtensa LX7 microcontroller with Wi-Fi and Bluetooth. All apps are written in C and built using the ESP-IDF framework. Familiarity with C and basic embedded development concepts will help you get the most out of the platform.
+</Note>
+
+## What's in These Docs
+
+These docs are organized to take you from unboxing to building:
+
+- **Quickstart** — get your toolchain set up and your first app running on the device.
+- **Hardware Overview** — understand the processor, display, input system, audio, and connectivity.
+- **Guides** — step-by-step walkthroughs for common tasks, starting with building your first game.
+- **API Reference** — complete documentation for every function in the Pocketbyte C SDK.
+
+Start with the [Quickstart](/quickstart) if you want to get something running right away, or read the [Hardware Overview](/hardware-overview) if you want to understand the platform before you write a single line of code.

@@ -1,0 +1,117 @@
+---
+title: "Display Initialization — Pocketbyte Display API Reference"
+sidebarTitle: "Initialization"
+description: "Initialize and configure the Pocketbyte display driver. Covers pocketbyte_display_init, pocketbyte_display_deinit, set_rotation, and dimension queries."
+---
+
+Before you draw a single pixel, the display subsystem must be initialized and — optionally — configured for your target orientation. The functions on this page cover the full lifecycle of the display driver: bringing it up, querying the logical screen dimensions after a rotation is applied, and tearing it down when you no longer need it. If you are using the umbrella `pocketbyte_init()` call, initialization happens automatically; these functions are primarily useful when you need fine-grained control over startup ordering or want to reinitialize the display after a configuration change.
+
+## Functions
+
+### `pocketbyte_display_init`
+
+```c
+esp_err_t pocketbyte_display_init(void);
+```
+
+Initializes the display driver and allocates the internal framebuffer. Call this once in `app_main` before invoking any drawing function. On success the display is ready to receive draw calls but shows no output until you call `pocketbyte_display_flush()`.
+
+<ParamField body="return" type="esp_err_t">
+  `ESP_OK` on success. `ESP_ERR_NO_MEM` if framebuffer allocation fails. `ESP_ERR_INVALID_STATE` if the display is already initialized.
+</ParamField>
+
+---
+
+### `pocketbyte_display_deinit`
+
+```c
+esp_err_t pocketbyte_display_deinit(void);
+```
+
+Releases all resources held by the display driver, including the framebuffer heap allocation and the SPI bus handle. After this call, drawing functions must not be invoked until `pocketbyte_display_init()` is called again. Use this when entering a deep-sleep mode where you need to reclaim memory before suspend.
+
+<ParamField body="return" type="esp_err_t">
+  `ESP_OK` on success. `ESP_ERR_INVALID_STATE` if the display was not initialized.
+</ParamField>
+
+---
+
+### `pocketbyte_display_set_rotation`
+
+```c
+esp_err_t pocketbyte_display_set_rotation(pocketbyte_display_rotation_t rotation);
+```
+
+Sets the logical orientation of the display. Rotation affects the coordinate system used by all drawing functions — after calling this, `(0, 0)` is always the top-left corner of the screen in the new orientation. The physical pixel dimensions of the panel are unchanged; `pocketbyte_display_get_width()` and `pocketbyte_display_get_height()` return the logical dimensions for the current rotation.
+
+<ParamField query="rotation" type="pocketbyte_display_rotation_t" required>
+  One of the following constants:
+
+  | Constant | Degrees | Description |
+  |----------|---------|-------------|
+  | `POCKETBYTE_DISPLAY_ROT_0` | 0° | Default portrait orientation |
+  | `POCKETBYTE_DISPLAY_ROT_90` | 90° | Landscape, rotated clockwise |
+  | `POCKETBYTE_DISPLAY_ROT_180` | 180° | Upside-down portrait |
+  | `POCKETBYTE_DISPLAY_ROT_270` | 270° | Landscape, rotated counter-clockwise |
+</ParamField>
+
+<ParamField body="return" type="esp_err_t">
+  `ESP_OK` on success. `ESP_ERR_INVALID_ARG` if `rotation` is not one of the four valid constants. `ESP_ERR_INVALID_STATE` if the display is not initialized.
+</ParamField>
+
+---
+
+### `pocketbyte_display_get_width`
+
+```c
+int pocketbyte_display_get_width(void);
+```
+
+Returns the logical width of the display in pixels for the current rotation. For `POCKETBYTE_DISPLAY_ROT_0` and `POCKETBYTE_DISPLAY_ROT_180` this is the panel's native width; for 90° and 270° rotations it returns the native height. Returns `-1` if the display has not been initialized.
+
+<ParamField body="return" type="int">
+  Logical display width in pixels, or `-1` on error.
+</ParamField>
+
+---
+
+### `pocketbyte_display_get_height`
+
+```c
+int pocketbyte_display_get_height(void);
+```
+
+Returns the logical height of the display in pixels for the current rotation. Complements `pocketbyte_display_get_width()` — the two together always describe the full drawable area. Returns `-1` if the display has not been initialized.
+
+<ParamField body="return" type="int">
+  Logical display height in pixels, or `-1` on error.
+</ParamField>
+
+---
+
+## Example: Initializing the Display
+
+The following example initializes the display in landscape orientation and reads back the logical screen dimensions before entering the main game loop.
+
+```c
+#include "pocketbyte/display.h"
+
+void app_main(void) {
+    ESP_ERROR_CHECK(pocketbyte_display_init());
+
+    ESP_ERROR_CHECK(
+        pocketbyte_display_set_rotation(POCKETBYTE_DISPLAY_ROT_90)
+    );
+
+    int width  = pocketbyte_display_get_width();
+    int height = pocketbyte_display_get_height();
+
+    ESP_LOGI("main", "Display ready: %dx%d", width, height);
+
+    // Drawing and game loop code follows...
+}
+```
+
+<Note>
+  If you call `pocketbyte_init()` (the umbrella initializer) instead of `pocketbyte_display_init()` directly, the display subsystem is initialized internally as part of that call. You do not need to — and should not — call `pocketbyte_display_init()` a second time. You can still call `pocketbyte_display_set_rotation()` freely after `pocketbyte_init()` returns.
+</Note>

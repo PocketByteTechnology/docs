@@ -1,0 +1,165 @@
+---
+title: "Audio Playback API — Pocketbyte SDK Audio Reference"
+sidebarTitle: "Playback"
+description: "Play tones and audio samples on Pocketbyte. Covers pocketbyte_audio_play_tone, pocketbyte_audio_play_sample, volume control, and playback state queries."
+---
+
+The Pocketbyte audio API gives you two playback modes — procedural tone generation and raw PCM sample playback — along with volume control and playback state queries. Whether you need a quick beep for UI feedback or a looping background music clip, the audio subsystem handles mixing and timing through an internal FreeRTOS task so your game loop stays unblocked.
+
+## Initialization
+
+```c
+esp_err_t pocketbyte_audio_init(void);
+```
+
+`pocketbyte_audio_init()` configures the I2S peripheral, allocates the internal audio task, and sets the default volume. Returns `ESP_OK` on success. The umbrella initializer calls it for you automatically:
+
+```c
+// Called internally by:
+ESP_ERROR_CHECK(pocketbyte_init());
+```
+
+If you initialize subsystems individually, call `pocketbyte_audio_init()` before invoking any other audio functions.
+
+## Tone Generation
+
+```c
+esp_err_t pocketbyte_audio_play_tone(uint32_t frequency_hz, uint32_t duration_ms);
+```
+
+Generates and plays a square wave tone at the specified frequency. Returns `ESP_OK` on success or an `esp_err_t` error code if the audio subsystem is unavailable.
+
+**Parameters**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `frequency_hz` | `uint32_t` | Tone frequency in hertz. Valid range: 20–20000 Hz. |
+| `duration_ms` | `uint32_t` | Playback duration in milliseconds. Pass `0` to play indefinitely until `pocketbyte_audio_stop()` is called. |
+
+**Example: Play a 440 Hz tone for half a second**
+
+```c
+ESP_ERROR_CHECK(pocketbyte_audio_play_tone(440, 500));
+```
+
+**Example: Start a continuous tone and stop it on button release**
+
+```c
+if (pocketbyte_button_pressed(POCKETBYTE_BTN_A)) {
+    pocketbyte_audio_play_tone(880, 0); // play until stopped
+}
+if (pocketbyte_button_released(POCKETBYTE_BTN_A)) {
+    pocketbyte_audio_stop();
+}
+```
+
+## Sample Playback
+
+```c
+esp_err_t pocketbyte_audio_play_sample(const int16_t *data, size_t len, uint32_t sample_rate);
+```
+
+Plays a buffer of raw signed 16-bit PCM audio. The SDK streams the buffer to the I2S peripheral via the internal audio task. Returns `ESP_OK` on success.
+
+**Parameters**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `data` | `const int16_t *` | Pointer to the PCM sample buffer. Must remain valid for the duration of playback. |
+| `len` | `size_t` | Number of samples in the buffer (not bytes). |
+| `sample_rate` | `uint32_t` | Playback sample rate in Hz. Common values: `22050`, `44100`. |
+
+**Example: Play a mono WAV loaded from SPIFFS**
+
+```c
+int16_t *audio_buf = NULL;
+size_t audio_len = 0;
+
+load_pcm_from_spiffs("/spiffs/jump.pcm", &audio_buf, &audio_len);
+ESP_ERROR_CHECK(pocketbyte_audio_play_sample(audio_buf, audio_len, 22050));
+```
+
+<Note>
+  Audio playback runs asynchronously in an internal FreeRTOS task. `pocketbyte_audio_play_sample()` returns immediately after queuing the buffer — it does not block your game loop. Use `pocketbyte_audio_is_playing()` to poll playback state, or call `pocketbyte_audio_stop()` to interrupt playback early. Ensure the `data` buffer remains valid in memory until playback completes.
+</Note>
+
+## Volume Control
+
+### `pocketbyte_audio_set_volume`
+
+```c
+esp_err_t pocketbyte_audio_set_volume(uint8_t volume);
+```
+
+Sets the playback volume. Changes take effect immediately, even during active playback.
+
+<ParamField query="volume" type="uint8_t" required>
+  Volume level from `0` (mute) to `100` (maximum). Values above `100` are clamped to `100`.
+</ParamField>
+
+<ParamField body="return" type="esp_err_t">
+  `ESP_OK` on success. `ESP_ERR_INVALID_STATE` if the audio subsystem is not initialized.
+</ParamField>
+
+---
+
+### `pocketbyte_audio_get_volume`
+
+```c
+uint8_t pocketbyte_audio_get_volume(void);
+```
+
+Returns the current volume level as a value between `0` and `100`.
+
+<ParamField body="return" type="uint8_t">
+  Current volume level in the range `0`–`100`.
+</ParamField>
+
+**Example: Implement a mute toggle**
+
+```c
+if (pocketbyte_button_pressed(POCKETBYTE_BTN_SELECT)) {
+    uint8_t vol = pocketbyte_audio_get_volume();
+    pocketbyte_audio_set_volume(vol > 0 ? 0 : 75);
+}
+```
+
+## Playback State
+
+### `pocketbyte_audio_is_playing`
+
+```c
+bool pocketbyte_audio_is_playing(void);
+```
+
+Returns `true` if audio is currently playing (either a tone or a sample). Returns `false` when the subsystem is idle. Use this to chain audio clips, display a "now playing" indicator, or gate certain game events behind audio completion.
+
+<ParamField body="return" type="bool">
+  `true` if a tone or sample is actively playing; `false` if the audio subsystem is idle.
+</ParamField>
+
+---
+
+### `pocketbyte_audio_stop`
+
+```c
+esp_err_t pocketbyte_audio_stop(void);
+```
+
+Stops the currently playing tone or sample immediately and returns the audio subsystem to an idle state. Calling `pocketbyte_audio_stop()` when nothing is playing is safe and has no effect.
+
+<ParamField body="return" type="esp_err_t">
+  `ESP_OK` on success or when nothing was playing. `ESP_ERR_INVALID_STATE` if the audio subsystem is not initialized.
+</ParamField>
+
+**Example: Wait for a jingle to finish before starting gameplay**
+
+```c
+pocketbyte_audio_play_sample(title_jingle, title_jingle_len, 22050);
+
+while (pocketbyte_audio_is_playing()) {
+    pocketbyte_frame_end();
+}
+
+start_game();
+```

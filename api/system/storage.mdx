@@ -1,0 +1,207 @@
+---
+title: "Storage API — Pocketbyte NVS and SPIFFS Reference"
+sidebarTitle: "Storage"
+description: "Persist data on Pocketbyte using NVS key-value storage and SPIFFS for file-based assets. Covers pocketbyte_nvs_set, nvs_get, and SPIFFS mounting."
+---
+
+Pocketbyte provides two complementary storage options: **NVS** (Non-Volatile Storage) for small key-value data like save files and settings, and **SPIFFS** (SPI Flash File System) for larger binary assets like sprites, audio clips, and level maps. Each targets a different use case — choose NVS when you need to read and write structured data at runtime, and SPIFFS when you need to bundle read-only or infrequently updated assets into your firmware image.
+
+## NVS — Non-Volatile Key-Value Storage
+
+NVS is backed by a dedicated flash partition and survives reboots and power cycles. It is ideal for storing high scores, player preferences, control mappings, and game progress. Keys are plain C strings; values are either signed 32-bit integers or null-terminated strings.
+
+### `pocketbyte_nvs_set_int`
+
+```c
+esp_err_t pocketbyte_nvs_set_int(const char *key, int32_t value);
+```
+
+Writes a 32-bit integer to NVS under the given key. Creates the key if it does not exist, or overwrites it if it does.
+
+<ParamField query="key" type="const char *" required>
+  Null-terminated key string. Maximum 15 characters (NVS platform limit).
+</ParamField>
+
+<ParamField query="value" type="int32_t" required>
+  The integer value to store.
+</ParamField>
+
+<ParamField body="return" type="esp_err_t">
+  `ESP_OK` on success. `ESP_ERR_NVS_INVALID_NAME` if `key` is `NULL` or exceeds the length limit. `ESP_ERR_NVS_NOT_ENOUGH_SPACE` if the NVS partition is full.
+</ParamField>
+
+---
+
+### `pocketbyte_nvs_get_int`
+
+```c
+esp_err_t pocketbyte_nvs_get_int(const char *key, int32_t *value);
+```
+
+Reads a 32-bit integer from NVS into `*value`.
+
+<ParamField query="key" type="const char *" required>
+  Null-terminated key string identifying the value to read.
+</ParamField>
+
+<ParamField query="value" type="int32_t *" required>
+  Pointer to an `int32_t` that receives the stored value. Must not be `NULL`.
+</ParamField>
+
+<ParamField body="return" type="esp_err_t">
+  `ESP_OK` on success. `ESP_ERR_NVS_NOT_FOUND` if the key does not exist. `ESP_ERR_NVS_INVALID_NAME` if `key` is invalid.
+</ParamField>
+
+---
+
+### `pocketbyte_nvs_set_str`
+
+```c
+esp_err_t pocketbyte_nvs_set_str(const char *key, const char *value);
+```
+
+Writes a null-terminated string to NVS under the given key. The string is copied into NVS storage; you do not need to keep the original buffer alive after this call returns.
+
+<ParamField query="key" type="const char *" required>
+  Null-terminated key string. Maximum 15 characters.
+</ParamField>
+
+<ParamField query="value" type="const char *" required>
+  Null-terminated string to store. Must not be `NULL`.
+</ParamField>
+
+<ParamField body="return" type="esp_err_t">
+  `ESP_OK` on success. `ESP_ERR_NVS_NOT_ENOUGH_SPACE` if the NVS partition is full. `ESP_ERR_NVS_INVALID_NAME` if `key` is invalid.
+</ParamField>
+
+---
+
+### `pocketbyte_nvs_get_str`
+
+```c
+esp_err_t pocketbyte_nvs_get_str(const char *key, char *out, size_t max_len);
+```
+
+Reads a string value from NVS into the `out` buffer, writing at most `max_len` bytes including the null terminator.
+
+<ParamField query="key" type="const char *" required>
+  Null-terminated key string identifying the value to read.
+</ParamField>
+
+<ParamField query="out" type="char *" required>
+  Caller-allocated buffer that receives the stored string. Must be at least `max_len` bytes.
+</ParamField>
+
+<ParamField query="max_len" type="size_t" required>
+  Size of `out` in bytes, including space for the null terminator.
+</ParamField>
+
+<ParamField body="return" type="esp_err_t">
+  `ESP_OK` on success. `ESP_ERR_NVS_NOT_FOUND` if the key is absent. `ESP_ERR_NVS_INVALID_LENGTH` if the stored string is longer than `max_len - 1`.
+</ParamField>
+
+---
+
+### `pocketbyte_nvs_erase_key`
+
+```c
+esp_err_t pocketbyte_nvs_erase_key(const char *key);
+```
+
+Removes a key and its associated value from NVS. Use this to reset individual settings to their defaults.
+
+<ParamField query="key" type="const char *" required>
+  Null-terminated key string identifying the entry to delete.
+</ParamField>
+
+<ParamField body="return" type="esp_err_t">
+  `ESP_OK` on success. `ESP_ERR_NVS_NOT_FOUND` if the key does not exist.
+</ParamField>
+
+### Example: Save and Load a High Score
+
+```c
+// Save high score
+int32_t new_score = 9850;
+ESP_ERROR_CHECK(pocketbyte_nvs_set_int("high_score", new_score));
+
+// Load high score, defaulting to 0 if not yet saved
+int32_t high_score = 0;
+esp_err_t err = pocketbyte_nvs_get_int("high_score", &high_score);
+if (err == ESP_ERR_NVS_NOT_FOUND) {
+    high_score = 0; // first run, no saved score
+} else {
+    ESP_ERROR_CHECK(err);
+}
+```
+
+<Note>
+  NVS uses ESP-IDF's built-in flash wear-leveling, which distributes writes across the partition to extend flash lifespan. However, avoid calling `pocketbyte_nvs_set_int` or `pocketbyte_nvs_set_str` in tight loops or on every frame — write only when data actually changes. Excessive writes will shorten the lifespan of the flash chip and degrade performance.
+</Note>
+
+## SPIFFS — File System for Assets
+
+SPIFFS provides a flat file system on a dedicated flash partition. It is the right choice for read-only or infrequently updated assets: sprite sheets, raw PCM audio clips, tile maps, font bitmaps, and level data. Once mounted, you access files using standard C file I/O with `/spiffs/` as the path prefix.
+
+### `pocketbyte_spiffs_mount`
+
+```c
+esp_err_t pocketbyte_spiffs_mount(void);
+```
+
+Mounts the SPIFFS partition and makes it available for file I/O. Call this once at startup before attempting to open any files.
+
+<ParamField body="return" type="esp_err_t">
+  `ESP_OK` on success. `ESP_ERR_NOT_FOUND` if no SPIFFS partition is found in the partition table. `ESP_FAIL` if the filesystem is corrupted and cannot be mounted.
+</ParamField>
+
+### Standard File I/O
+
+Once mounted, use the standard C library functions to read files from the SPIFFS partition. Files are accessed with paths of the form `/spiffs/<filename>`.
+
+```c
+FILE *f = fopen("/spiffs/sprite.bin", "rb");
+if (f == NULL) {
+    ESP_LOGE("STORAGE", "Failed to open sprite.bin");
+    return;
+}
+
+uint8_t sprite_buf[512];
+size_t read = fread(sprite_buf, 1, sizeof(sprite_buf), f);
+fclose(f);
+```
+
+### `pocketbyte_spiffs_unmount`
+
+```c
+esp_err_t pocketbyte_spiffs_unmount(void);
+```
+
+Unmounts the SPIFFS partition. Call this before entering deep sleep or performing a firmware update to ensure all pending I/O is flushed and the partition is cleanly released.
+
+<ParamField body="return" type="esp_err_t">
+  `ESP_OK` on success. `ESP_ERR_INVALID_STATE` if SPIFFS was not mounted.
+</ParamField>
+
+### Example: Load an Audio Sample from SPIFFS
+
+```c
+ESP_ERROR_CHECK(pocketbyte_spiffs_mount());
+
+FILE *f = fopen("/spiffs/jump.pcm", "rb");
+if (f) {
+    fseek(f, 0, SEEK_END);
+    size_t file_size = ftell(f);
+    rewind(f);
+
+    int16_t *audio_buf = malloc(file_size);
+    fread(audio_buf, 1, file_size, f);
+    fclose(f);
+
+    pocketbyte_audio_play_sample(audio_buf, file_size / sizeof(int16_t), 22050);
+}
+```
+
+<Tip>
+  Use the ESP-IDF SPIFFS image generator to package your assets into the firmware before flashing. Run `idf.py spiffsgen` (or configure `SPIFFS_IMAGE_PATH` in your `CMakeLists.txt`) to produce a SPIFFS binary from a local assets folder. This way your sprites, sounds, and maps are baked into the flash image and available immediately after boot — no external SD card or download step required.
+</Tip>

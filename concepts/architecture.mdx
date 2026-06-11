@@ -1,0 +1,87 @@
+---
+title: "Pocketbyte SDK Architecture and Application Structure"
+sidebarTitle: "Architecture"
+description: "Understand how Pocketbyte applications are structured: the init/loop/deinit lifecycle, how the SDK layers over ESP-IDF, and the component model."
+---
+
+The Pocketbyte SDK is built as an ESP-IDF component that sits between your application code and the low-level hardware drivers of the ESP32-S3. Rather than managing display controllers, GPIO interrupts, and audio peripherals directly, you work through a clean, game-oriented API that handles the hardware complexity for you. Every Pocketbyte application follows the same structural pattern: initialize the system, run a frame loop, and clean up when done.
+
+## Application Lifecycle
+
+Pocketbyte applications move through three distinct phases. Understanding each phase helps you put initialization code, game logic, and teardown in the right place.
+
+<Steps>
+  <Step title="Init — Set up hardware and load assets">
+    Call `pocketbyte_init()` once at startup. This brings up the display, input subsystem, and audio driver, and prepares the SDK's internal state. Load your sprites, sound data, and any other assets here before the loop begins. Performing heavy asset loading inside the frame loop causes frame-rate hitches, so front-load as much work as possible in this phase.
+  </Step>
+  <Step title="Loop — Run game or app logic each frame">
+    Your main `while (1)` loop is where everything interactive happens. Each iteration represents one frame: read the current input state, update your game's logic and entities, and draw the new frame to the framebuffer. End every iteration with `pocketbyte_frame_end()`, which flushes the display and synchronizes the frame timing.
+  </Step>
+  <Step title="Deinit — Release resources and shut down">
+    Call `pocketbyte_deinit()` when your application is finished. This releases hardware resources and frees any internally allocated memory. In practice, most games run until power-off, so you may never reach this call — but including it keeps your code correct and portable.
+  </Step>
+</Steps>
+
+### Minimal Application Skeleton
+
+The following skeleton shows the complete structure of a valid Pocketbyte application. Every real application expands on this pattern — the three-phase lifecycle stays the same no matter how complex your game becomes.
+
+```c
+#include "pocketbyte/pocketbyte.h"
+
+void app_main(void) {
+    pocketbyte_init();
+
+    while (1) {
+        // read input
+        // update game state
+        // draw frame
+        pocketbyte_frame_end();
+    }
+
+    pocketbyte_deinit();
+}
+```
+
+## ESP-IDF Component Model
+
+The Pocketbyte SDK is distributed as an ESP-IDF component and is installed through the IDF Component Manager. When you add it as a dependency, ESP-IDF's build system compiles the SDK alongside your application and links everything into a single firmware binary.
+
+Your project follows the standard IDF layout: your game code lives in the `main` component, and the `pocketbyte` component is listed as a dependency in your `idf_component.yml`. The build system resolves the dependency graph automatically.
+
+Install the component with:
+
+```bash
+idf.py add-dependency "omrawaley/pocketbyte"
+```
+
+After installation, your `idf_component.yml` will contain an entry like the following, which pins the SDK version and lets the component manager fetch it on subsequent builds:
+
+```yaml
+dependencies:
+  omrawaley/pocketbyte:
+    version: ">=1.0.0"
+```
+
+<CardGroup cols={2}>
+  <Card title="Your App (main component)" icon="code">
+    Contains your `app_main` entry point, game logic, assets, and any custom components you build. Depends on the Pocketbyte SDK component.
+  </Card>
+  <Card title="Pocketbyte SDK (IDF component)" icon="microchip">
+    Provides the high-level API for display, input, and audio. Wraps the ESP-IDF drivers and FreeRTOS primitives so your code stays portable and concise.
+  </Card>
+</CardGroup>
+
+## SDK Layering Over ESP-IDF
+
+The SDK acts as a hardware abstraction layer (HAL) tailored specifically to Pocketbyte. Instead of configuring SPI bus parameters to talk to the display controller or writing raw GPIO code to read button states, you call functions like `pocketbyte_display_flush()` or `pocketbyte_button_pressed()`. The SDK translates those calls into the appropriate ESP-IDF driver operations.
+
+This layering gives you three concrete benefits:
+
+- **Portability** — if Pocketbyte hardware revisions change the underlying display or input IC, the SDK update handles the difference without requiring changes to your application code.
+- **Safety** — the SDK manages shared resources (SPI bus, I2S peripheral) so you don't accidentally conflict with its internal usage.
+- **Productivity** — you spend time writing game logic rather than consulting ESP-IDF driver documentation.
+
+<Note>
+  FreeRTOS runs underneath every Pocketbyte application. The ESP-IDF framework starts the FreeRTOS scheduler before calling `app_main`, so your main loop executes inside a FreeRTOS task. The SDK may create additional internal tasks (for example, for audio playback). You can create your own tasks using standard FreeRTOS APIs, but take care not to starve the SDK's internal tasks by assigning them lower priorities than your own high-CPU-load tasks.
+</Note>

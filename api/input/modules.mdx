@@ -1,0 +1,63 @@
+---
+title: "Input Module Detection — Pocketbyte Input Reference"
+sidebarTitle: "Modules"
+description: "Detect and identify connected Pocketbyte input modules at runtime. Covers pocketbyte_input_get_module_type and POCKETBYTE_MODULE_* constants."
+---
+
+Pocketbyte's swappable input module system lets players and developers choose the physical control layout that best suits their game. Modules connect through a hot-swappable interface on the device body, and the SDK detects which module is attached automatically at runtime — no manual configuration or compile-time flags required.
+
+## How Module Detection Works
+
+When `pocketbyte_input_init()` runs (called internally by `pocketbyte_init()`), the SDK queries the module identification lines on the input connector and stores the detected type. You can read this value at any point using `pocketbyte_input_get_module_type()`. Detection is performed once at initialization; if you swap modules while the device is running, call `pocketbyte_input_init()` again to refresh the detected type.
+
+## Module Type Constants
+
+Use the `POCKETBYTE_MODULE_*` constants to compare against the return value of `pocketbyte_input_get_module_type()`. All constants are of type `pocketbyte_module_t`.
+
+| Constant | Description |
+|---|---|
+| `POCKETBYTE_MODULE_STANDARD` | Standard button layout with face buttons and a directional cluster |
+| `POCKETBYTE_MODULE_DPAD` | D-pad variant optimized for precise directional input |
+| `POCKETBYTE_MODULE_NONE` | No module detected; input connector is empty or unrecognized |
+
+## `pocketbyte_input_get_module_type`
+
+```c
+pocketbyte_module_t pocketbyte_input_get_module_type(void);
+```
+
+Returns the `pocketbyte_module_t` value corresponding to the module currently identified by the SDK. Call this after `pocketbyte_init()` to branch your startup logic, or check it during runtime to adapt UI and gameplay features dynamically.
+
+<ParamField body="return" type="pocketbyte_module_t">
+  One of the `POCKETBYTE_MODULE_*` constants: `POCKETBYTE_MODULE_STANDARD`, `POCKETBYTE_MODULE_DPAD`, or `POCKETBYTE_MODULE_NONE` if no module is detected.
+</ParamField>
+
+## Example: Conditional Feature Activation
+
+Use the detected module type to enable the control scheme that matches the player's hardware.
+
+```c
+pocketbyte_module_t module = pocketbyte_input_get_module_type();
+if (module == POCKETBYTE_MODULE_DPAD) {
+    enable_analog_style_movement();
+} else {
+    enable_standard_movement();
+}
+```
+
+You can also use `POCKETBYTE_MODULE_NONE` to display a "no controller attached" screen rather than launching into a broken play state:
+
+```c
+if (pocketbyte_input_get_module_type() == POCKETBYTE_MODULE_NONE) {
+    display_no_module_warning();
+    return;
+}
+```
+
+<Note>
+  The `POCKETBYTE_BTN_*` button constants work correctly regardless of which module is attached. The SDK automatically maps the physical controls of each module to the logical button identifiers, so `POCKETBYTE_BTN_UP` always means "up" whether the player is using a standard layout or a d-pad module. You do not need to write per-module button reading code.
+</Note>
+
+<Tip>
+  Design your game to work well with both `POCKETBYTE_MODULE_STANDARD` and `POCKETBYTE_MODULE_DPAD` for the best player experience. Use `pocketbyte_input_get_module_type()` to fine-tune feel — such as movement speed or input curves — rather than hard-gating features behind a specific module.
+</Tip>

@@ -1,0 +1,121 @@
+---
+title: "System Lifecycle API — Pocketbyte System Reference"
+sidebarTitle: "Lifecycle"
+description: "Initialize and shut down the Pocketbyte SDK. Covers pocketbyte_init, pocketbyte_deinit, pocketbyte_frame_end, and system info functions."
+---
+
+The Pocketbyte lifecycle API controls the SDK from startup through every frame tick to shutdown. It provides the umbrella initializer that brings up all subsystems in the correct order, a frame-end function that governs loop timing, and a set of utility functions for time measurement and version introspection. Every Pocketbyte application starts and is structured around these calls.
+
+## `pocketbyte_init`
+
+```c
+esp_err_t pocketbyte_init(void);
+```
+
+Initializes the entire Pocketbyte SDK. Internally, `pocketbyte_init()` brings up the display, input, and audio subsystems in dependency order. Call this as the very first SDK function in `app_main`, and always wrap it with `ESP_ERROR_CHECK` to catch hardware or configuration faults early.
+
+<ParamField body="return" type="esp_err_t">
+  `ESP_OK` on success. Propagates the `esp_err_t` error code returned by whichever subsystem failed to initialize, e.g. `ESP_ERR_NO_MEM` if framebuffer allocation fails.
+</ParamField>
+
+```c
+void app_main(void) {
+    ESP_ERROR_CHECK(pocketbyte_init());
+    // SDK is ready — subsystems are live
+}
+```
+
+## `pocketbyte_deinit`
+
+```c
+void pocketbyte_deinit(void);
+```
+
+Releases all resources allocated by the SDK: stops the audio task, deinitializes the display driver, frees GPIO listeners, and clears internal state. Call this when your application needs to shut down cleanly. Returns no value.
+
+<Note>
+  In most embedded applications `pocketbyte_deinit()` is never reached — the device runs until power-off. It is provided for graceful shutdown scenarios such as entering deep sleep, resetting into a bootloader, or writing automated tests that need a clean teardown between runs.
+</Note>
+
+## `pocketbyte_frame_end`
+
+```c
+void pocketbyte_frame_end(void);
+```
+
+Call `pocketbyte_frame_end()` at the **end of each iteration** of your main game loop. It handles frame timing bookkeeping, enforces a consistent target frame rate, and yields the CPU to other FreeRTOS tasks (including the audio task) for the remainder of the frame budget. Relying on `pocketbyte_frame_end()` for loop pacing is strongly preferred over manual `vTaskDelay` calls. Returns no value.
+
+## `pocketbyte_get_tick_ms`
+
+```c
+uint32_t pocketbyte_get_tick_ms(void);
+```
+
+Returns the number of milliseconds elapsed since the device booted. Use this for delta-time calculations, animation timers, cooldown tracking, and anything else that needs wall-clock time independent of frame rate.
+
+<ParamField body="return" type="uint32_t">
+  Milliseconds elapsed since boot. Wraps around after approximately 49.7 days of continuous uptime.
+</ParamField>
+
+```c
+uint32_t start = pocketbyte_get_tick_ms();
+// ... do work ...
+uint32_t elapsed = pocketbyte_get_tick_ms() - start;
+```
+
+## `pocketbyte_delay_ms`
+
+```c
+void pocketbyte_delay_ms(uint32_t ms);
+```
+
+Blocks execution for the specified number of milliseconds. Internally this calls `vTaskDelay`, so other FreeRTOS tasks continue to run during the delay.
+
+<ParamField query="ms" type="uint32_t" required>
+  Number of milliseconds to block. Passing `0` returns immediately.
+</ParamField>
+
+<Warning>
+  Avoid using `pocketbyte_delay_ms()` inside your game loop. Inserting a fixed delay stalls your render and input pipeline, causing dropped frames and unresponsive controls. Use `pocketbyte_frame_end()` for loop pacing instead. Reserve `pocketbyte_delay_ms()` for one-time startup sequences or hardware settling delays outside the main loop.
+</Warning>
+
+## `pocketbyte_get_sdk_version`
+
+```c
+const char *pocketbyte_get_sdk_version(void);
+```
+
+Returns a null-terminated string containing the current SDK version, for example `"1.2.0"`. Use this in debug output, crash reports, or an in-game about screen to surface the SDK version to developers and players.
+
+<ParamField body="return" type="const char *">
+  Pointer to a null-terminated version string in `"MAJOR.MINOR.PATCH"` format. The returned pointer is valid for the lifetime of the application and must not be freed.
+</ParamField>
+
+```c
+ESP_LOGI("APP", "Pocketbyte SDK version: %s", pocketbyte_get_sdk_version());
+```
+
+## Minimal Application Skeleton
+
+The following is a complete, minimal Pocketbyte application. Use it as a starting point for any new project.
+
+```c
+#include "pocketbyte/pocketbyte.h"
+
+void app_main(void) {
+    ESP_ERROR_CHECK(pocketbyte_init());
+
+    while (1) {
+        pocketbyte_input_update();
+
+        // game logic here
+
+        ESP_ERROR_CHECK(pocketbyte_display_flush());
+        pocketbyte_frame_end();
+    }
+
+    pocketbyte_deinit();
+}
+```
+
+The loop follows a strict order: **update inputs → run logic → flush display → end frame**. Keeping to this order ensures that button states, display output, and frame timing are always consistent with each other.

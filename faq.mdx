@@ -1,0 +1,126 @@
+---
+title: "Frequently Asked Questions About Pocketbyte Development"
+sidebarTitle: "FAQ"
+description: "Frequently asked questions about Pocketbyte: SDK compatibility, supported languages, storage, display specs, and community resources."
+---
+
+Whether you are just getting started or exploring the limits of what Pocketbyte can do, these are the questions developers ask most often. If your question is not covered here, visit [pocketbyte.co](https://pocketbyte.co) for links to community channels and the GitHub repository where you can open an issue.
+
+<AccordionGroup>
+
+<Accordion title="What ESP-IDF version is required?">
+Pocketbyte requires **ESP-IDF v5.0 or newer**. We recommend using **ESP-IDF v5.2 or later** for the best stability and access to the latest ESP32-S3 features and bug fixes.
+
+You can check your installed version by running:
+
+```bash
+idf.py --version
+```
+
+Older ESP-IDF 4.x releases are not supported — the Pocketbyte SDK relies on component manager features and APIs introduced in v5.0.
+
+To install or update ESP-IDF, follow the official ESP-IDF Getting Started guide for your operating system.
+</Accordion>
+
+<Accordion title="Can I write games in C++ instead of C?">
+Yes. ESP-IDF supports C++ natively, and the Pocketbyte SDK headers are fully compatible with C++ projects. You can rename your source files to `.cpp` and use C++ features including classes, templates, and the standard library.
+
+To register a C++ source file with the build system, list it in your `main/CMakeLists.txt`:
+
+```cmake
+idf_component_register(
+    SRCS "main.cpp" "game.cpp"
+    INCLUDE_DIRS "."
+)
+```
+
+If you mix C and C++ sources, wrap any C SDK headers included from C++ files in `extern "C"` blocks to prevent name-mangling issues:
+
+```cpp
+extern "C" {
+#include "pocketbyte.h"
+}
+```
+
+The SDK's own headers already include these guards, so in most cases you can include them directly.
+</Accordion>
+
+<Accordion title="How much flash storage does Pocketbyte have?">
+The ESP32-S3 on Pocketbyte comes with on-chip flash storage. The exact capacity depends on the specific module variant used in your unit.
+
+The default ESP-IDF partition table reserves space for the bootloader, NVS (non-volatile storage), and a single factory app partition. If you want to store game assets such as sprites, audio samples, or level data, you need to add a dedicated SPIFFS partition by providing a custom `partitions.csv` file.
+
+See the [Project Setup](/configuration/project-setup) page for a complete example of a custom partition table with a SPIFFS partition.
+
+At build time, run `idf.py size` to see the current size of your compiled binary and make sure it fits within the app partition you have allocated.
+</Accordion>
+
+<Accordion title="Can I use Wi-Fi or Bluetooth in my app?">
+Yes. The ESP32-S3 includes a 2.4 GHz radio that supports both Wi-Fi (802.11 b/g/n) and Bluetooth (Classic and BLE). You can use standard ESP-IDF networking and Bluetooth APIs alongside the Pocketbyte SDK in the same application.
+
+For example, you can use ESP-IDF's `esp_wifi` component to connect to a network for leaderboard submissions, over-the-air (OTA) firmware updates, or multiplayer, and use the Pocketbyte SDK for display, input, and audio at the same time.
+
+Be aware that the radio increases current draw. If you are running on battery, manage the radio aggressively — enable and disable it only when needed — to extend play time.
+</Accordion>
+
+<Accordion title="How do I update the Pocketbyte SDK component?">
+Run the following command in your project directory:
+
+```bash
+idf.py update-dependencies
+```
+
+This instructs the component manager to check for newer versions of all dependencies that match the constraints in your `idf_component.yml` and download them into `managed_components/`.
+
+If you want to allow the SDK to update to a newer major or minor release, adjust the version constraint in `main/idf_component.yml` before running the command:
+
+```yaml
+dependencies:
+  omrawaley/pocketbyte: ">=0.4.0"
+  idf: ">=5.0.0"
+```
+
+After updating, rebuild your project with `idf.py build` and test thoroughly — new SDK versions may introduce API changes that require updates to your code.
+</Accordion>
+
+<Accordion title="Is there a community or forum for Pocketbyte developers?">
+Visit [pocketbyte.co](https://pocketbyte.co) for links to community channels where you can ask questions, share projects, and connect with other Pocketbyte developers.
+
+For bug reports, feature requests, and SDK issues, open an issue on the GitHub repository. When filing a bug report, include your ESP-IDF version, the SDK version from your `idf_component.yml`, a minimal code sample that reproduces the issue, and the serial monitor output.
+</Accordion>
+
+<Accordion title="Can I run emulators on Pocketbyte?">
+Yes. The ESP32-S3 is capable of running emulators for retro platforms, and Pocketbyte was designed with this use case in mind. The hardware's swappable input modules make it easy to attach a controller layout appropriate for the system you are emulating.
+
+When building an emulator, keep the following in mind:
+
+- The ESP32-S3 has a dual-core Xtensa LX7 processor running at up to 240 MHz — use both cores to split emulation and rendering work.
+- PSRAM (if available on your module) provides additional RAM for frame buffers and ROM data.
+- Use the SPIFFS partition for ROM storage rather than embedding large binaries in the firmware image.
+- Profile your emulator with `idf.py size` and the ESP-IDF performance tracing tools to identify bottlenecks.
+</Accordion>
+
+<Accordion title="What happens to my app during a device reset?">
+When Pocketbyte resets — whether from a power cycle, the RESET button, a watchdog timeout, or a crash — the ESP32-S3 restarts its bootloader and launches your app from the beginning of `app_main`. All in-memory state (variables, buffers, game state) is lost.
+
+To preserve state across resets, use the **NVS (Non-Volatile Storage)** API provided by ESP-IDF:
+
+```c
+#include "nvs_flash.h"
+#include "nvs.h"
+
+// Initialise NVS
+nvs_flash_init();
+
+// Open a namespace and write a value
+nvs_handle_t handle;
+nvs_open("game_state", NVS_READWRITE, &handle);
+nvs_set_u32(handle, "high_score", current_high_score);
+nvs_commit(handle);
+nvs_close(handle);
+```
+
+NVS data survives resets and power cycles. It is erased only if you explicitly erase it or flash a new partition table that overwrites the NVS partition.
+</Accordion>
+
+</AccordionGroup>

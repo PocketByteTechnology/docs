@@ -1,0 +1,130 @@
+---
+title: "Button Input API — Pocketbyte SDK Input Reference"
+sidebarTitle: "Buttons"
+description: "Read button states in Pocketbyte apps. Covers pocketbyte_input_update, pocketbyte_button_pressed, held, released, and POCKETBYTE_BTN_* constants."
+---
+
+The Pocketbyte button input API gives you precise, frame-accurate access to every physical button on the device. Rather than reading raw GPIO states, the SDK tracks transitions between frames so you can distinguish a fresh button press from a sustained hold — a distinction that matters for nearly every game mechanic from menu navigation to charged attacks.
+
+## Initialization
+
+```c
+esp_err_t pocketbyte_input_init(void);
+```
+
+`pocketbyte_input_init()` sets up the GPIO pins and internal state buffers for the button subsystem. Returns `ESP_OK` on success. You do not need to call it directly — the umbrella initializer handles it for you:
+
+```c
+// Called internally by:
+ESP_ERROR_CHECK(pocketbyte_init());
+```
+
+If you are initializing subsystems individually, call `pocketbyte_input_init()` before invoking any other input functions.
+
+## Per-Frame Update
+
+```c
+void pocketbyte_input_update(void);
+```
+
+Call `pocketbyte_input_update()` **once at the start of every frame**, before reading any button state. This function snapshots the current hardware state and computes the transition deltas (pressed, held, released) that the query functions rely on.
+
+Calling a query function without first calling `pocketbyte_input_update()` returns stale data from the previous frame. Calling it more than once per frame discards edge events and may cause missed inputs.
+
+## Button Constants
+
+Use the `POCKETBYTE_BTN_*` constants to identify buttons when calling the state query functions. All constants are of type `pocketbyte_button_t`.
+
+| Constant | Description |
+|---|---|
+| `POCKETBYTE_BTN_A` | Primary action button |
+| `POCKETBYTE_BTN_B` | Secondary action button |
+| `POCKETBYTE_BTN_UP` | D-pad / face button up |
+| `POCKETBYTE_BTN_DOWN` | D-pad / face button down |
+| `POCKETBYTE_BTN_LEFT` | D-pad / face button left |
+| `POCKETBYTE_BTN_RIGHT` | D-pad / face button right |
+| `POCKETBYTE_BTN_START` | Start / pause button |
+| `POCKETBYTE_BTN_SELECT` | Select / back button |
+
+## State Query Functions
+
+The three query functions each describe a different phase of a button's lifetime within a frame.
+
+### `pocketbyte_button_pressed`
+
+```c
+bool pocketbyte_button_pressed(pocketbyte_button_t btn);
+```
+
+Returns `true` **only on the single frame** the button transitions from unpressed to pressed. Subsequent frames where the button remains held return `false`. Use this for one-shot actions: confirming a menu item, firing a single projectile, or triggering a jump.
+
+<ParamField query="btn" type="pocketbyte_button_t" required>
+  The button to query. Use one of the `POCKETBYTE_BTN_*` constants, e.g. `POCKETBYTE_BTN_A`.
+</ParamField>
+
+<ParamField body="return" type="bool">
+  `true` on the first frame the button is pressed down; `false` on all other frames.
+</ParamField>
+
+---
+
+### `pocketbyte_button_held`
+
+```c
+bool pocketbyte_button_held(pocketbyte_button_t btn);
+```
+
+Returns `true` **every frame** the button is physically held down, including the first frame of the press. Use this for continuous actions: moving a character, scrolling a list, or charging an attack.
+
+<ParamField query="btn" type="pocketbyte_button_t" required>
+  The button to query. Use one of the `POCKETBYTE_BTN_*` constants.
+</ParamField>
+
+<ParamField body="return" type="bool">
+  `true` every frame the button is held; `false` when the button is not pressed.
+</ParamField>
+
+---
+
+### `pocketbyte_button_released`
+
+```c
+bool pocketbyte_button_released(pocketbyte_button_t btn);
+```
+
+Returns `true` **only on the single frame** the button transitions from pressed to unpressed. Use this to trigger on-release mechanics: releasing a charged shot, ending a held dash, or confirming a long-press interaction.
+
+<ParamField query="btn" type="pocketbyte_button_t" required>
+  The button to query. Use one of the `POCKETBYTE_BTN_*` constants.
+</ParamField>
+
+<ParamField body="return" type="bool">
+  `true` on the first frame the button is released; `false` on all other frames.
+</ParamField>
+
+## Example: Game Loop
+
+The following example shows all three query functions working together inside a typical game loop.
+
+```c
+while (1) {
+    pocketbyte_input_update();
+
+    if (pocketbyte_button_pressed(POCKETBYTE_BTN_START)) {
+        pause_game();
+    }
+    if (pocketbyte_button_held(POCKETBYTE_BTN_RIGHT)) {
+        player.x += PLAYER_SPEED;
+    }
+    if (pocketbyte_button_released(POCKETBYTE_BTN_A)) {
+        stop_charge();
+    }
+
+    ESP_ERROR_CHECK(pocketbyte_display_flush());
+    pocketbyte_frame_end();
+}
+```
+
+<Tip>
+  Use `pocketbyte_button_pressed` for menu navigation — it fires exactly once per key tap, preventing accidental cursor skipping. Switch to `pocketbyte_button_held` for in-game movement and scrolling where continuous response is expected.
+</Tip>

@@ -1,0 +1,161 @@
+---
+title: "Sprite Rendering — Pocketbyte Display API Reference Guide"
+sidebarTitle: "Sprites"
+description: "Load and draw sprites on the Pocketbyte display. Covers pocketbyte_sprite_t, pocketbyte_sprite_load, pocketbyte_sprite_draw, and sprite memory management."
+---
+
+Pocketbyte's sprite API gives you a lightweight way to define, load, and render small pixel-art images without relying on a file system or external assets at runtime. Sprites are stored as flat C arrays of RGB565 pixels, making it straightforward to embed them directly in your firmware image. The sprite subsystem handles memory allocation, positional drawing, integer scaling, and a single transparent-color convention so you can composite sprites over backgrounds without extra blending code.
+
+## The `pocketbyte_sprite_t` Type
+
+```c
+typedef struct {
+    int       width;   // Sprite width in pixels.
+    int       height;  // Sprite height in pixels.
+    uint16_t *data;    // Pointer to the RGB565 pixel array (row-major order).
+} pocketbyte_sprite_t;
+```
+
+You never populate this struct directly. Always use `pocketbyte_sprite_load_from_array()` to create a sprite — it allocates and owns the `data` buffer. Release sprite memory with `pocketbyte_sprite_free()` when the sprite is no longer needed.
+
+## Functions
+
+### `pocketbyte_sprite_load_from_array`
+
+```c
+pocketbyte_sprite_t *pocketbyte_sprite_load_from_array(
+    const uint16_t *data,
+    int             width,
+    int             height
+);
+```
+
+Creates a new sprite from a C array of RGB565 pixels stored in row-major order (left-to-right, top-to-bottom). The function copies `width × height` pixels from `data` into a heap-allocated buffer owned by the returned `pocketbyte_sprite_t`. The original `data` pointer may point to `const` flash memory or a stack/heap buffer — either is valid.
+
+<ParamField query="data" type="const uint16_t *" required>
+  Pointer to an array of `width × height` RGB565 pixel values in row-major order. Must not be `NULL`.
+</ParamField>
+
+<ParamField query="width" type="int" required>
+  Width of the sprite in pixels. Must be greater than zero.
+</ParamField>
+
+<ParamField query="height" type="int" required>
+  Height of the sprite in pixels. Must be greater than zero.
+</ParamField>
+
+<ParamField body="return" type="pocketbyte_sprite_t *">
+  Pointer to the newly allocated sprite, or `NULL` if heap allocation failed. Always check the return value before using the sprite.
+</ParamField>
+
+---
+
+### `pocketbyte_sprite_draw`
+
+```c
+void pocketbyte_sprite_draw(const pocketbyte_sprite_t *sprite, int x, int y);
+```
+
+Draws the sprite at position `(x, y)` in the current framebuffer, where `(x, y)` is the top-left corner of the sprite. Pixels with the value `0x0001` are treated as transparent and are not written to the framebuffer, leaving whatever was drawn underneath them visible. All other pixels, including `0x0000` (pure black), are drawn opaque. Sprite pixels that fall outside the screen bounds are silently clipped.
+
+<ParamField query="sprite" type="const pocketbyte_sprite_t *" required>
+  Pointer to a valid sprite created by `pocketbyte_sprite_load_from_array()`. Must not be `NULL`.
+</ParamField>
+
+<ParamField query="x" type="int" required>
+  X coordinate of the sprite's top-left corner on the display.
+</ParamField>
+
+<ParamField query="y" type="int" required>
+  Y coordinate of the sprite's top-left corner on the display.
+</ParamField>
+
+---
+
+### `pocketbyte_sprite_draw_scaled`
+
+```c
+void pocketbyte_sprite_draw_scaled(
+    const pocketbyte_sprite_t *sprite,
+    int x,
+    int y,
+    int scale
+);
+```
+
+Draws the sprite at position `(x, y)` with uniform integer scaling. A `scale` of `2` renders each source pixel as a 2×2 block, `3` as a 3×3 block, and so on. Transparent pixels (`0x0001`) are respected at all scale factors. Integer-only scaling keeps the pixel art aesthetic sharp and avoids the blurring associated with sub-pixel or floating-point scaling.
+
+<ParamField query="sprite" type="const pocketbyte_sprite_t *" required>
+  Pointer to a valid sprite. Must not be `NULL`.
+</ParamField>
+
+<ParamField query="x" type="int" required>
+  X coordinate of the top-left corner of the scaled sprite on the display.
+</ParamField>
+
+<ParamField query="y" type="int" required>
+  Y coordinate of the top-left corner of the scaled sprite on the display.
+</ParamField>
+
+<ParamField query="scale" type="int" required>
+  Integer scale factor. Must be `1` or greater. Passing `1` is equivalent to calling `pocketbyte_sprite_draw()`. Values less than `1` produce no output.
+</ParamField>
+
+---
+
+### `pocketbyte_sprite_free`
+
+```c
+void pocketbyte_sprite_free(pocketbyte_sprite_t *sprite);
+```
+
+Releases the heap memory allocated for the sprite's pixel data and the `pocketbyte_sprite_t` struct itself. After calling this function, the pointer is invalid and must not be passed to any other sprite function. Passing `NULL` is safe and has no effect.
+
+<ParamField query="sprite" type="pocketbyte_sprite_t *" required>
+  Pointer to the sprite to free, as returned by `pocketbyte_sprite_load_from_array()`. Passing `NULL` is a no-op.
+</ParamField>
+
+---
+
+## Example: Embedding and Drawing a Sprite
+
+The following example defines a 3×3 pixel player character as a compile-time constant array, loads it into a sprite, draws it to the framebuffer, and flushes the display.
+
+```c
+#include "pocketbyte/display.h"
+
+// A 3×3 sprite: white corners, red cross pattern.
+// Use 0x0001 for transparent pixels.
+static const uint16_t player_data[] = {
+    0xFFFF, 0xF800, 0xFFFF,  // row 0: white, red, white
+    0xF800, 0xF800, 0xF800,  // row 1: red,   red, red
+    0xFFFF, 0xF800, 0xFFFF,  // row 2: white, red, white
+};
+
+void draw_player(int pos_x, int pos_y) {
+    pocketbyte_sprite_t *player = pocketbyte_sprite_load_from_array(
+        player_data, 3, 3
+    );
+
+    if (player == NULL) {
+        ESP_LOGE("sprite", "Failed to allocate player sprite");
+        return;
+    }
+
+    // Draw the sprite scaled up 4× so it is visible at 12×12 pixels.
+    pocketbyte_sprite_draw_scaled(player, pos_x, pos_y, 4);
+
+    ESP_ERROR_CHECK(pocketbyte_display_flush());
+
+    // Free the sprite after drawing.
+    pocketbyte_sprite_free(player);
+}
+```
+
+<Tip>
+  Rather than hand-coding pixel arrays, use a pixel art editor (such as Aseprite or Libresprite) and export to PNG, then run a small conversion script — written in Python or Node — to emit a `const uint16_t[]` array in your preferred header file. A minimal converter reads each pixel's R, G, B components and outputs `RGB565(r, g, b)` values row by row, ready to paste straight into your source.
+</Tip>
+
+<Note>
+  The reserved transparent color is `0x0001`, a near-black value that is virtually indistinguishable from true black (`0x0000`) at human-visible scale. If your artwork contains true black pixels you want to render opaque, use `0x0000` — it will be drawn normally. Only the exact value `0x0001` is skipped during rasterization. If your converter script produces black as `0x0001`, update it to output `0x0000` for opaque black pixels and reserve `0x0001` exclusively for transparent regions.
+</Note>

@@ -1,0 +1,229 @@
+---
+title: "Display Drawing Functions — Pocketbyte Display API"
+sidebarTitle: "Drawing"
+description: "Draw pixels, shapes, lines, and text to the Pocketbyte framebuffer. Covers pocketbyte_display_draw_pixel, draw_rect, draw_line, draw_text, and flush."
+---
+
+The Pocketbyte display subsystem uses a double-buffered framebuffer model: all drawing functions write into an in-memory buffer, and nothing appears on the physical screen until you call `pocketbyte_display_flush()`. This approach lets you build up a complete frame — background, sprites, UI — before committing it all at once, which eliminates tearing and flicker. The functions on this page cover every primitive you need to paint a frame: clearing the buffer, drawing individual pixels, rectangles, lines, and ASCII text.
+
+## Color Format
+
+All color parameters use the **RGB565** format: a 16-bit unsigned integer encoding red in the top 5 bits, green in the next 6 bits, and blue in the lower 5 bits. Use the following macro to convert familiar 8-bit R, G, B component values into an RGB565 word:
+
+```c
+// Macro to create an RGB565 color from R, G, B in the range 0–255.
+#define RGB565(r, g, b) (((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3))
+
+uint16_t red    = RGB565(255,   0,   0);
+uint16_t teal   = RGB565(  0, 128, 128);
+uint16_t purple = RGB565(128,   0, 128);
+```
+
+The SDK also provides the following ready-made constants for convenience:
+
+| Constant | Color |
+|----------|-------|
+| `POCKETBYTE_COLOR_BLACK` | `0x0000` — pure black |
+| `POCKETBYTE_COLOR_WHITE` | `0xFFFF` — pure white |
+| `POCKETBYTE_COLOR_RED` | `0xF800` — pure red |
+| `POCKETBYTE_COLOR_GREEN` | `0x07E0` — pure green |
+| `POCKETBYTE_COLOR_BLUE` | `0x001F` — pure blue |
+
+## Functions
+
+### `pocketbyte_display_clear`
+
+```c
+void pocketbyte_display_clear(uint16_t color);
+```
+
+Fills the entire framebuffer with a single color. Call this at the beginning of each frame to erase the previous frame's contents before drawing the new one.
+
+<ParamField query="color" type="uint16_t" required>
+  RGB565 fill color. Pass `POCKETBYTE_COLOR_BLACK` for a black background.
+</ParamField>
+
+---
+
+### `pocketbyte_display_draw_pixel`
+
+```c
+void pocketbyte_display_draw_pixel(int x, int y, uint16_t color);
+```
+
+Writes a single pixel at `(x, y)` in the framebuffer. The origin `(0, 0)` is the top-left corner of the logical screen. Coordinates outside the screen bounds are silently clipped.
+
+<ParamField query="x" type="int" required>
+  Horizontal pixel position. Valid range: `0` to `pocketbyte_display_get_width() - 1`.
+</ParamField>
+
+<ParamField query="y" type="int" required>
+  Vertical pixel position. Valid range: `0` to `pocketbyte_display_get_height() - 1`.
+</ParamField>
+
+<ParamField query="color" type="uint16_t" required>
+  RGB565 pixel color.
+</ParamField>
+
+---
+
+### `pocketbyte_display_draw_rect`
+
+```c
+void pocketbyte_display_draw_rect(int x, int y, int width, int height, uint16_t color);
+```
+
+Draws a filled rectangle with its top-left corner at `(x, y)`. The rectangle is clipped to screen bounds, so it is safe to pass values that extend beyond the display edge.
+
+<ParamField query="x" type="int" required>
+  X coordinate of the top-left corner.
+</ParamField>
+
+<ParamField query="y" type="int" required>
+  Y coordinate of the top-left corner.
+</ParamField>
+
+<ParamField query="width" type="int" required>
+  Width of the rectangle in pixels. Must be greater than zero.
+</ParamField>
+
+<ParamField query="height" type="int" required>
+  Height of the rectangle in pixels. Must be greater than zero.
+</ParamField>
+
+<ParamField query="color" type="uint16_t" required>
+  RGB565 fill color.
+</ParamField>
+
+---
+
+### `pocketbyte_display_draw_rect_outline`
+
+```c
+void pocketbyte_display_draw_rect_outline(int x, int y, int width, int height, uint16_t color);
+```
+
+Draws a one-pixel-wide rectangle outline (hollow rectangle) with its top-left corner at `(x, y)`. The interior is left untouched. Useful for UI elements like selection boxes or health bars.
+
+<ParamField query="x" type="int" required>
+  X coordinate of the top-left corner.
+</ParamField>
+
+<ParamField query="y" type="int" required>
+  Y coordinate of the top-left corner.
+</ParamField>
+
+<ParamField query="width" type="int" required>
+  Width of the rectangle in pixels.
+</ParamField>
+
+<ParamField query="height" type="int" required>
+  Height of the rectangle in pixels.
+</ParamField>
+
+<ParamField query="color" type="uint16_t" required>
+  RGB565 outline color.
+</ParamField>
+
+---
+
+### `pocketbyte_display_draw_line`
+
+```c
+void pocketbyte_display_draw_line(int x0, int y0, int x1, int y1, uint16_t color);
+```
+
+Draws a one-pixel-wide straight line between `(x0, y0)` and `(x1, y1)` using Bresenham's line algorithm. Both endpoints are included. Diagonal, horizontal, and vertical lines are all supported.
+
+<ParamField query="x0" type="int" required>
+  X coordinate of the start point.
+</ParamField>
+
+<ParamField query="y0" type="int" required>
+  Y coordinate of the start point.
+</ParamField>
+
+<ParamField query="x1" type="int" required>
+  X coordinate of the end point.
+</ParamField>
+
+<ParamField query="y1" type="int" required>
+  Y coordinate of the end point.
+</ParamField>
+
+<ParamField query="color" type="uint16_t" required>
+  RGB565 line color.
+</ParamField>
+
+---
+
+### `pocketbyte_display_draw_text`
+
+```c
+void pocketbyte_display_draw_text(int x, int y, const char *text, uint16_t color);
+```
+
+Renders a null-terminated ASCII string using the SDK's built-in bitmap font. Each character occupies an 8×8 pixel cell. The `(x, y)` position is the top-left corner of the first character. Characters that extend beyond the right edge of the screen are clipped; the function does not wrap text to a new line automatically.
+
+<ParamField query="x" type="int" required>
+  X coordinate of the top-left corner of the first character.
+</ParamField>
+
+<ParamField query="y" type="int" required>
+  Y coordinate of the top-left corner of the first character.
+</ParamField>
+
+<ParamField query="text" type="const char *" required>
+  Null-terminated ASCII string to render. Non-printable characters (code points below 0x20 or above 0x7E) are rendered as a blank space.
+</ParamField>
+
+<ParamField query="color" type="uint16_t" required>
+  RGB565 foreground text color. The font background is transparent — whatever was drawn beneath the text glyphs remains visible.
+</ParamField>
+
+---
+
+### `pocketbyte_display_flush`
+
+```c
+esp_err_t pocketbyte_display_flush(void);
+```
+
+Transfers the contents of the framebuffer to the physical display over SPI. Call this once at the end of each frame after all drawing is complete. This is a blocking call — it returns only after the transfer is finished.
+
+<ParamField body="return" type="esp_err_t">
+  `ESP_OK` on success. `ESP_ERR_INVALID_STATE` if the display is not initialized. `ESP_FAIL` if the SPI transfer encounters a bus error.
+</ParamField>
+
+<Warning>
+  Drawing calls alone do **not** update what appears on the screen — you must call `pocketbyte_display_flush()` at the end of every frame. A common mistake is to draw content during development, see nothing on the display, and assume a drawing function is broken when the real cause is a missing `flush()` call.
+</Warning>
+
+---
+
+## Example: Drawing a Frame
+
+The following example demonstrates a complete frame: clear the buffer, draw a background rectangle, a diagonal line, and a text label, then flush to the display.
+
+```c
+#include "pocketbyte/display.h"
+
+void draw_frame(void) {
+    // 1. Clear to a dark navy background.
+    pocketbyte_display_clear(RGB565(0, 0, 64));
+
+    // 2. Draw a white border around the screen.
+    int w = pocketbyte_display_get_width();
+    int h = pocketbyte_display_get_height();
+    pocketbyte_display_draw_rect_outline(0, 0, w, h, POCKETBYTE_COLOR_WHITE);
+
+    // 3. Draw a red diagonal line across the center.
+    pocketbyte_display_draw_line(0, 0, w - 1, h - 1, POCKETBYTE_COLOR_RED);
+
+    // 4. Draw a score label in the top-left corner.
+    pocketbyte_display_draw_text(4, 4, "SCORE: 0", POCKETBYTE_COLOR_WHITE);
+
+    // 5. Commit the frame to the physical display.
+    ESP_ERROR_CHECK(pocketbyte_display_flush());
+}
+```

@@ -1,0 +1,65 @@
+---
+title: "Hardware Overview: Specs and Features"
+sidebarTitle: "Hardware Overview"
+description: "A complete hardware reference for Pocketbyte."
+---
+
+Pocketbyte is built around capable, industry-standard hardware — the kind that gives you enough horsepower for real games and applications while keeping the platform simple enough to program in C. This page covers the major hardware subsystems: the processor, display, input system, audio output, and connectivity. Understanding the hardware will help you write better software, choose the right controller module for your project, and make the most of the library.
+
+## Processor
+
+Pocketbyte runs on the **ESP32-S3**, Espressif's dual-core Xtensa LX7 IoT microcontroller. It offers substantial processing power, making it well-suited to running program logic, handling graphics updates, processing input, and managing audio simultaneously.
+
+Key characteristics of the ESP32-S3:
+
+- **Dual-core Xtensa LX7** running at up to 240 MHz
+- **Wi-Fi (802.11 b/g/n)** and **Bluetooth 5 (LE)** built in
+- 512 KB of SRAM plus 16 MB of built-in PSRAM accessed via the internal octal SPI bus
+- Hardware acceleration for common operations, including vector instructions useful for graphics and signal processing
+- Rich peripheral set: SPI, I2C, UART, I2S, ADC, and more
+
+The Pocketbyte library targets the ESP32-S3 specifically. When you set up your IDF project, always set the target to `esp32s3` to ensure the correct toolchain, memory layout, and peripheral configuration are applied.
+
+## Display
+
+Pocketbyte includes a 320x240 ST7789V IPS display driven via SPI. It can achieve well over 60 Hz and can display any RGB565 color. The DevKits also expose the display's Tearing Enable (TE) pin, so you can enable "fake" VSync to help reduce screen tearing.
+
+You interact with the display entirely through library calls — you don't need to configure display hardware or write low-level driver code unless you want to do some crazy hacking. 
+
+## Input System / Modules
+
+The most distinctive feature of Pocketbyte is its **swappable input module system**. Rather than fixing a single control layout, Pocketbyte allows different physical input modules to be attached to the device. Each module provides a different control scheme — you might use a d-pad module for a platformer, a Blackberry keyboard module for synced note taking, or a custom configuration for a specialized application.
+
+<Warning>
+  Design your program's input handling around the specific module you intend to use, and document which module your program requires.
+</Warning>
+
+## Audio
+
+Pocketbyte includes **built-in audio output** capability. The audio circuit is set up so that the mono speaker and stereo headphone jack outputs are mutually exclusive, meaning the speaker shuts off when the headphones are plugged in and vice versa.
+
+The library provides an audio API that let you play tones, sound effects, and simple audio data through the device's audio hardware. You do not need to configure the underlying I2S or DAC peripheral directly — the library handles the hardware setup.
+
+## Connectivity
+
+Pocketbyte connects to your development machine via **USB-C**, which serves three purposes:
+
+- **Flashing** — the USB connection is used by `idf.py flash` to program new firmware onto the device.
+- **Power** — the device is powered over USB during development, while it is plugged-in. This happens automatically.
+- **USB-OTG peripherals** — allows Pocketbyte to act as a USB host, enabling you to connect and use peripherals like wired keyboards and much more.
+
+The USB connection also exposes a **serial (UART) interface** that you can use for debug output via `printf` and the ESP-IDF logging system. Monitor it with:
+
+```bash
+idf.py monitor
+```
+
+The ESP32-S3's **Wi-Fi and Bluetooth** radios are available for applications that need wireless connectivity. You can use the standard ESP-IDF Wi-Fi and BLE APIs alongside the Pocketbyte library in the same project.
+
+<Note>
+  Exact hardware specifications — including display resolution, pinout assignments, battery capacity, and audio hardware details — are specific to your device revision. Refer to the documentation included in your Pocketbyte box or packaging for the precise specs that apply to your unit.
+</Note>
+
+<Tip>
+  Ready to start writing code? Head to the [Development Setup](/development-setup) to set up your development environment, then jump into the [Guides](/guides/first-program) to build a complete program from scratch.
+</Tip>

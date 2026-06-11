@@ -1,0 +1,73 @@
+---
+title: "Pocketbyte Display System and Framebuffer Rendering"
+sidebarTitle: "Display"
+description: "Learn how the Pocketbyte display system works: framebuffer rendering, coordinate system, color format, and the draw-then-flush workflow."
+---
+
+The Pocketbyte display system gives you a straightforward, framebuffer-based rendering model. You draw everything for a given frame into an off-screen buffer, then push the completed buffer to the physical screen in one operation. This approach prevents screen tearing, keeps your rendering code simple, and maps naturally onto the frame-loop structure at the heart of every Pocketbyte application.
+
+## Framebuffer Model
+
+Pocketbyte uses a double-buffered rendering approach: you never draw directly to the screen. Instead, the SDK maintains an in-memory framebuffer that represents the next frame to be displayed. All drawing calls — pixels, rectangles, sprites, text — write into this buffer. When your frame is ready, a single flush call copies the buffer contents to the display hardware over SPI.
+
+This model means you can call drawing functions in any order within a frame without worrying about partial updates being visible to the player. The screen only changes when you explicitly flush.
+
+## Coordinate System
+
+<CardGroup cols={2}>
+  <Card title="Origin" icon="crosshairs">
+    The coordinate origin `(0, 0)` is at the **top-left** corner of the screen.
+  </Card>
+  <Card title="Axes" icon="arrows-up-down-left-right">
+    The **x-axis** increases to the right. The **y-axis** increases downward. This matches most 2D game and UI conventions.
+  </Card>
+</CardGroup>
+
+All drawing functions accept `x` and `y` parameters in screen pixels, measured from the top-left origin. Coordinates outside the screen bounds are clipped by the SDK — off-screen draws are silently ignored, so you don't need to add manual bounds checks for every object that might move off the edge.
+
+## Color Format
+
+The display uses **16-bit RGB565** color encoding. Each pixel is represented as a 16-bit value where:
+
+- Bits 15–11 → 5 bits of red
+- Bits 10–5 → 6 bits of green
+- Bits 4–0 → 5 bits of blue
+
+The SDK provides color constants and a macro to construct RGB565 values from individual channel components, so you rarely need to pack bits manually. When importing sprite assets, use a conversion tool that outputs RGB565 data to ensure colors are represented correctly on the display.
+
+## Draw-Then-Flush Workflow
+
+Every frame follows the same two-step rendering process:
+
+<Steps>
+  <Step title="Call drawing functions to update the framebuffer">
+    Use the SDK's drawing API to write pixels, shapes, sprites, and text into the framebuffer. These calls are purely in-memory operations — nothing appears on the physical screen yet. You can call them in any order, and later draws overwrite earlier ones at the same coordinates (painter's algorithm).
+  </Step>
+  <Step title="Call pocketbyte_display_flush() to push the buffer to the screen">
+    Once all drawing for the current frame is complete, call `pocketbyte_display_flush()`. This triggers a DMA transfer over SPI that sends the entire framebuffer to the display controller. The function blocks until the transfer is complete, giving you a clean synchronization point before the next frame begins. In a typical main loop, `pocketbyte_frame_end()` calls this for you automatically.
+  </Step>
+</Steps>
+
+A minimal rendering loop looks like this:
+
+```c
+while (1) {
+    // Clear the previous frame
+    pocketbyte_display_clear(COLOR_BLACK);
+
+    // Draw your game objects
+    pocketbyte_display_draw_sprite(&player_sprite, player_x, player_y);
+    pocketbyte_display_draw_rect(10, 10, 50, 8, COLOR_RED);  // health bar
+
+    // Flush the completed frame to the screen
+    pocketbyte_frame_end();  // calls pocketbyte_display_flush() internally
+}
+```
+
+<Tip>
+  Always clear the framebuffer at the start of each frame with `pocketbyte_display_clear()` before drawing your scene. If you skip the clear, pixels from the previous frame remain in the buffer — objects that moved or disappeared will leave visible trails, commonly called **ghosting**. Clearing takes a fixed, small amount of time and is almost always worth it.
+</Tip>
+
+## Sprite Support
+
+The SDK includes built-in support for rendering sprites from raw pixel data stored in flash. Sprites are drawn with `pocketbyte_display_draw_sprite()` and support a configurable transparent color key so backgrounds show through. Full details — including the sprite data format, color key configuration, and scaled rendering — are covered in the [API Reference](/api/display/sprites).

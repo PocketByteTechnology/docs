@@ -1,0 +1,88 @@
+---
+title: "Pocketbyte Audio: Tone Generation and Sample Playback"
+sidebarTitle: "Audio"
+description: "Learn how Pocketbyte's audio system works: playing tones, loading PCM samples, adjusting volume, and managing playback with the C SDK."
+---
+
+The Pocketbyte audio system lets you add sound effects and musical tones to your applications without directly managing the ESP32-S3's audio peripherals. Whether you need a quick beep for a menu selection or a looping background track for your game, the SDK provides a straightforward API that keeps audio concerns separate from your frame loop logic.
+
+## What the Audio System Supports
+
+Pocketbyte's audio capabilities fall into two categories:
+
+<CardGroup cols={2}>
+  <Card title="Tone Generation" icon="music">
+    Generate square-wave tones at any frequency for a specified duration. Ideal for sound effects, chiptune-style music, and UI feedback. No audio data needs to be stored in flash.
+  </Card>
+  <Card title="Audio Sample Playback" icon="volume-high">
+    Play back raw PCM audio samples stored in flash memory. Use this for pre-recorded sound effects or voice clips where tone generation isn't expressive enough.
+  </Card>
+</CardGroup>
+
+## Audio Hardware Output
+
+Audio output on the Pocketbyte is driven through the ESP32-S3's **I2S peripheral** (or internal DAC, depending on your hardware revision), which streams digital audio data to the output stage at a configured sample rate. The SDK initializes the I2S driver during `pocketbyte_init()` and manages the DMA buffers internally — you don't need to configure the peripheral yourself.
+
+The internal audio pipeline runs at a fixed sample rate set by the SDK. Tone generation synthesizes samples at that rate on the fly. For sample playback, your audio data must match the SDK's expected format (sample rate, bit depth, and channel count); the API reference documents the exact requirements.
+
+<Warning>
+  Do not call ESP-IDF's I2S driver APIs directly in your application. The Pocketbyte SDK owns the I2S peripheral for audio output — calling low-level driver functions from your code will conflict with the SDK's internal DMA transfers and produce corrupted audio or a system crash.
+</Warning>
+
+## Volume Control
+
+Control playback volume with `pocketbyte_audio_set_volume()`, which accepts a value from `0` (silent) to `100` (maximum). You can call this at any point — mid-tone, during sample playback, or between sounds — and the change takes effect immediately.
+
+```c
+// Set volume to 75% before playing
+pocketbyte_audio_set_volume(75);
+
+// Query the current volume level
+uint8_t vol = pocketbyte_audio_get_volume();
+```
+
+Store the player's preferred volume in NVS (non-volatile storage) so it persists between sessions. The SDK does not persist volume state across reboots.
+
+## Playing Tones
+
+Use `pocketbyte_audio_play_tone()` to generate a tone at a given frequency for a given duration. Frequency is specified in Hertz and duration in milliseconds:
+
+```c
+// Play a 440 Hz tone for 500ms
+pocketbyte_audio_play_tone(440, 500);
+```
+
+You can chain tones to create simple melodies:
+
+```c
+// Simple ascending arpeggio
+pocketbyte_audio_play_tone(262, 150);  // C4
+pocketbyte_audio_play_tone(330, 150);  // E4
+pocketbyte_audio_play_tone(392, 150);  // G4
+pocketbyte_audio_play_tone(523, 300);  // C5
+```
+
+<Note>
+  Audio playback runs **asynchronously** on a background FreeRTOS task. When you call `pocketbyte_audio_play_tone()` or a sample playback function, the call returns immediately and your game loop continues executing at full speed. The audio plays out in parallel. If you need to trigger a sound at a precise game event (a coin collected, a jump), call the audio function at the moment the event occurs and let the SDK handle the rest.
+</Note>
+
+## Playing Audio Samples
+
+Store your audio clips as arrays of PCM sample data in flash memory, then pass a pointer and length to the playback function:
+
+```c
+#include "sounds/jump_sfx.h"  // declares extern const uint8_t jump_sfx_data[];
+
+// Play the jump sound effect
+pocketbyte_audio_play_sample(jump_sfx_data, jump_sfx_len);
+```
+
+To stop a sound before it finishes — for example, when the player pauses the game — call `pocketbyte_audio_stop()`:
+
+```c
+pocketbyte_audio_stop();
+```
+
+<Tip>
+  Keep your audio clips as short as practical to conserve flash storage. The ESP32-S3 has a limited flash budget shared between your firmware, assets, and any file system you use. Prefer 8-bit mono samples at a modest sample rate (8 kHz or 11 kHz) for short sound effects — the perceptible quality difference on a small speaker is minimal, but the storage savings are significant. Reserve higher sample rates for content where audio fidelity genuinely matters.
+</Tip>

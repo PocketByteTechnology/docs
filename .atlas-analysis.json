@@ -1,0 +1,112 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "Pocketbyte",
+  "projectDescription": "Pocketbyte is an indie video game handheld computer with swappable inputs, and this documentation covers the official C SDK for creating games and applications on the device.",
+  "theme": "luma",
+  "primaryColor": "#fab41c",
+  "lightColor": "#8c6c25",
+  "darkColor": "#363533",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "hardware-overview"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/architecture",
+              "concepts/display",
+              "concepts/input",
+              "concepts/audio"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/first-game",
+              "guides/handling-input",
+              "guides/drawing-graphics",
+              "guides/playing-audio"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/project-setup",
+              "configuration/build-flash"
+            ]
+          },
+          {
+            "group": "Help",
+            "pages": [
+              "troubleshooting",
+              "faq"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api/overview"
+            ]
+          },
+          {
+            "group": "Display",
+            "pages": [
+              "api/display/init",
+              "api/display/drawing",
+              "api/display/sprites"
+            ]
+          },
+          {
+            "group": "Input",
+            "pages": [
+              "api/input/buttons",
+              "api/input/modules"
+            ]
+          },
+          {
+            "group": "Audio",
+            "pages": [
+              "api/audio/playback"
+            ]
+          },
+          {
+            "group": "System",
+            "pages": [
+              "api/system/lifecycle",
+              "api/system/storage"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Swappable input modules for customizable controls",
+    "Official C SDK (ESP-IDF component) for game and app development",
+    "ESP32-S3 based hardware with display, audio, and button support",
+    "IDF Component Manager integration for easy dependency management",
+    "Designed for indie game developers and self-directed learners"
+  ],
+  "publicApiSurface": [
+    "idf.py add-dependency \"omrawaley/pocketbyte\"",
+    "Display initialization and rendering API",
+    "Input/button reading API",
+    "Audio playback API",
+    "System lifecycle hooks (init, loop, deinit)",
+    "Storage/file system access API"
+  ]
+}

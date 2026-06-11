@@ -1,0 +1,150 @@
+---
+title: "Building, Flashing, and Monitoring Pocketbyte Apps"
+sidebarTitle: "Build & Flash"
+description: "Build Pocketbyte firmware with ESP-IDF, flash it to your device over USB, and monitor serial output to verify and debug your application."
+---
+
+Once your project is configured, the development loop on Pocketbyte is straightforward: build your firmware with `idf.py`, connect the device over USB, flash the binary, and watch serial output to verify everything is running correctly. This page covers every command you need, how to identify the right serial port on each operating system, and how to combine steps to speed up iteration.
+
+<Warning>
+Before running any `idf.py` command, make sure the ESP-IDF environment is sourced in your current shell session. If you see errors like `idf.py: command not found`, run:
+
+```bash
+. $IDF_PATH/export.sh
+```
+
+You need to do this once per terminal session, or add it to your shell profile.
+</Warning>
+
+## Setting the Target
+
+You only need to set the chip target once per project. Setting it writes the correct architecture into `sdkconfig` and ensures all ESP-IDF components and toolchains are configured for the ESP32-S3.
+
+```bash
+idf.py set-target esp32s3
+```
+
+If you skip this step, the build system defaults to the generic `esp32` target, and your firmware will not run correctly on Pocketbyte hardware.
+
+## Building
+
+Compile your project and link the final firmware binary with:
+
+```bash
+idf.py build
+```
+
+The build system performs the following steps:
+
+1. **Dependency resolution** — downloads or updates any components listed in `idf_component.yml`.
+2. **Code generation** — generates Kconfig headers, partition table binaries, and bootloader sources.
+3. **Compilation** — compiles all C/C++ sources for every component in the dependency graph.
+4. **Linking** — produces `build/my_pocketbyte_game.elf`.
+5. **Binary packaging** — converts the ELF into flashable `.bin` files inside the `build/` directory.
+
+A successful build ends with a message showing binary sizes and the flash command to use.
+
+<Info>
+Incremental builds only recompile changed files. Subsequent builds after the first are significantly faster.
+</Info>
+
+## Flashing
+
+Connect Pocketbyte to your computer via USB, then run:
+
+```bash
+idf.py -p PORT flash
+```
+
+Replace `PORT` with the serial port your device appears on. Use the table below to find it on your OS:
+
+| Operating System | Typical port |
+|---|---|
+| **Linux** | `/dev/ttyUSB0` or `/dev/ttyACM0` |
+| **macOS** | `/dev/cu.usbserial-*` or `/dev/cu.usbmodem*` |
+| **Windows** | `COM3`, `COM4`, etc. (check Device Manager) |
+
+**Example commands:**
+
+```bash
+# Linux
+idf.py -p /dev/ttyUSB0 flash
+
+# macOS
+idf.py -p /dev/cu.usbserial-0001 flash
+
+# Windows
+idf.py -p COM3 flash
+```
+
+The flash command uploads the bootloader, partition table, and application binary in sequence.
+
+<Tip>
+If the flash command times out waiting for the device to enter download mode, hold the **BOOT** button on Pocketbyte, then press and release the **RESET** button while keeping BOOT held, then release BOOT. The device will enter flash mode and the command will proceed.
+</Tip>
+
+## Monitoring Serial Output
+
+After flashing, open the serial monitor to see `printf` output, ESP-IDF log messages, and crash backtraces:
+
+```bash
+idf.py -p PORT monitor
+```
+
+Press **Ctrl+]** to exit the monitor and return to your shell.
+
+The monitor decodes addresses in crash backtraces against your ELF file automatically, showing you the exact source file and line number where a crash occurred.
+
+## Flash and Monitor in One Step
+
+Combine flashing and monitoring into a single command to streamline your development loop:
+
+```bash
+idf.py -p PORT flash monitor
+```
+
+This flashes the device, waits for it to boot, and immediately attaches the serial monitor — no need to run two commands separately.
+
+## Checking Binary Size
+
+After a build, inspect how much flash and RAM each component consumes:
+
+```bash
+idf.py size
+```
+
+For a more detailed breakdown by source file, use:
+
+```bash
+idf.py size-components
+```
+
+Or drill down to individual symbols:
+
+```bash
+idf.py size-files
+```
+
+Use these commands to catch binary bloat early — especially important if you are close to the limits of your partition table's app partition size.
+
+<Steps>
+
+<Step title="Set the target (first time only)">
+```bash
+idf.py set-target esp32s3
+```
+</Step>
+
+<Step title="Build">
+```bash
+idf.py build
+```
+</Step>
+
+<Step title="Flash and monitor">
+```bash
+idf.py -p PORT flash monitor
+```
+</Step>
+
+</Steps>

@@ -1,0 +1,95 @@
+---
+title: "Pocketbyte Input System: Buttons and Module Swapping"
+sidebarTitle: "Input"
+description: "Learn how Pocketbyte handles input: reading button states, detecting presses and releases, and working with swappable input modules."
+---
+
+The Pocketbyte input system gives you a consistent, frame-based API for reading player input regardless of which physical module is attached to the device. Whether a player is using a standard button layout, a directional pad, or another supported input module, your code reads input the same way — the SDK normalizes the hardware differences so you never need to write module-specific logic in your game.
+
+## Swappable Input Modules
+
+One of Pocketbyte's defining hardware features is its hot-swappable input module system. Different modules connect to the same physical port on the device and expose different control surfaces — a standard four-button layout, a D-pad with action buttons, an analog thumbstick, and more.
+
+<CardGroup cols={2}>
+  <Card title="Unified API" icon="plug">
+    The SDK detects which module is connected and maps its controls onto a common set of logical button identifiers. Your code always references buttons by name (for example, `POCKETBYTE_BTN_A`, `POCKETBYTE_BTN_UP`) rather than raw GPIO pins.
+  </Card>
+  <Card title="Module Detection" icon="magnifying-glass">
+    Module identification happens during `pocketbyte_init()`. If no module is connected, button reads return a neutral (not-pressed) state rather than garbage values, so your game degrades gracefully.
+  </Card>
+</CardGroup>
+
+<Info>
+  Not every logical button exists on every module. A module that lacks a dedicated D-pad, for instance, won't fire `POCKETBYTE_BTN_UP` events. Design your control scheme around the module you're targeting, and document which module your game requires if it uses the full button set.
+</Info>
+
+## Button States
+
+The SDK tracks three distinct states for every logical button:
+
+| State | Description |
+|---|---|
+| **Pressed** | The button transitioned from not-held to held this frame. True for exactly one frame when the player first pushes the button. |
+| **Held** | The button is currently being held down. True for every frame while the button remains depressed, including the first frame. |
+| **Released** | The button transitioned from held to not-held this frame. True for exactly one frame when the player lifts their finger. |
+
+Use *pressed* for actions that should fire once per tap (jumping, selecting a menu item). Use *held* for continuous actions (moving a character, holding a charge). Use *released* for actions triggered when the player lets go.
+
+## Polling Model
+
+The Pocketbyte input system uses a **polling model** — there is no event queue or interrupt callback. Instead, the SDK snapshots the hardware input state at the start of each frame, and you query that snapshot by calling input functions during your frame loop. This approach keeps input handling deterministic and easy to reason about: the state you read is always the state at the start of the current frame.
+
+The SDK updates the input snapshot when you call `pocketbyte_frame_end()` (or `pocketbyte_input_update()` if you need to update input independently). Because the snapshot is updated once per frame, calling the same input query function multiple times within a single frame always returns the same result.
+
+## Reading Button State
+
+Call the appropriate query function with a button identifier constant to check its state:
+
+```c
+if (pocketbyte_button_pressed(POCKETBYTE_BTN_A)) {
+    // handle A button press
+}
+```
+
+Use `pocketbyte_button_held()` for continuous input and `pocketbyte_button_released()` for release events:
+
+```c
+// Continuous movement while the button is held
+if (pocketbyte_button_held(POCKETBYTE_BTN_RIGHT)) {
+    player_x += PLAYER_SPEED;
+}
+
+// Fire an action on button release
+if (pocketbyte_button_released(POCKETBYTE_BTN_B)) {
+    cancel_action();
+}
+```
+
+A complete frame loop with input handling follows this structure:
+
+```c
+while (1) {
+    // Read input first — snapshot is fresh at the top of the loop
+    if (pocketbyte_button_pressed(POCKETBYTE_BTN_A)) {
+        player_jump();
+    }
+
+    if (pocketbyte_button_held(POCKETBYTE_BTN_RIGHT)) {
+        player_x += PLAYER_SPEED;
+    }
+
+    // Update game state
+    update_entities();
+
+    // Draw the frame
+    pocketbyte_display_clear(COLOR_BLACK);
+    draw_scene();
+
+    // End the frame — flushes display and updates input snapshot
+    pocketbyte_frame_end();
+}
+```
+
+<Note>
+  Read input at the **start** of each frame loop iteration, before updating game state or drawing. The SDK's input snapshot is consistent for the entire frame, but establishing a clear top-of-loop convention makes your code easier to follow and ensures input changes you act on this frame are reflected in the same frame's output — giving your game the tightest possible response feel.
+</Note>

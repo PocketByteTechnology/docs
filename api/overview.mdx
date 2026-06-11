@@ -1,0 +1,92 @@
+---
+title: "Pocketbyte C SDK API Reference — Overview and Conventions"
+sidebarTitle: "Overview"
+description: "Overview of the Pocketbyte C SDK: subsystem organization, umbrella header, initialization order, return values, and naming conventions for all APIs."
+---
+
+The Pocketbyte C SDK exposes a C API organized into four subsystems — **display**, **input**, **audio**, and **system** — each responsible for a distinct area of hardware functionality. Whether you are rendering sprites to the screen, reading button presses from a swappable input module, playing audio, or managing device lifecycle, every capability is accessible through a consistent, ESP-IDF-compatible interface. This page orients you to the top-level structure of the SDK before you dive into individual subsystem references.
+
+## Including the SDK
+
+Add the following umbrella header to any translation unit that uses the Pocketbyte SDK:
+
+```c
+#include "pocketbyte/pocketbyte.h"
+```
+
+This single header transitively includes every subsystem header, so you never need to cherry-pick individual headers unless you deliberately want to limit which subsystems are visible in a given file.
+
+## Subsystems
+
+The SDK is divided into four subsystems. Each subsystem lives in its own header and maps directly to a section of the API reference.
+
+| Subsystem | Header | Description |
+|-----------|--------|-------------|
+| Display | `pocketbyte/display.h` | Screen rendering — initialize the display driver, draw shapes, text, sprites, and flush the framebuffer to the physical screen |
+| Input | `pocketbyte/input.h` | Button and module reading — poll or register callbacks for button state, and detect which input module is currently attached |
+| Audio | `pocketbyte/audio.h` | Sound playback — play tones, load PCM samples, and control volume and mixing |
+| System | `pocketbyte/system.h` | Init, lifecycle, storage — boot the device, manage non-volatile storage, control sleep modes, and read hardware metadata |
+
+## Initialization Order
+
+Always call `pocketbyte_init()` before invoking any other SDK function. This umbrella initializer starts the ESP-IDF peripherals the SDK depends on, configures shared resources, and calls each subsystem's own init function in the correct sequence.
+
+```c
+#include "pocketbyte/pocketbyte.h"
+
+void app_main(void) {
+    ESP_ERROR_CHECK(pocketbyte_init());
+
+    // Safe to call display, input, audio, and system functions from here.
+}
+```
+
+Calling any subsystem function before `pocketbyte_init()` returns `ESP_OK` produces undefined behavior. The only exception is reading compile-time constants such as `POCKETBYTE_DISPLAY_WIDTH_MAX`, which are resolved at compile time and carry no runtime dependency.
+
+## Return Values and Error Handling
+
+Most SDK functions return `esp_err_t`. A return value of `ESP_OK` (integer zero) indicates success. Any non-zero value is an error code defined by ESP-IDF or by the SDK itself.
+
+During development and debugging, wrap SDK calls with `ESP_ERROR_CHECK()` so that any unexpected error immediately halts execution and prints the source location to the serial console:
+
+```c
+ESP_ERROR_CHECK(pocketbyte_display_init());
+ESP_ERROR_CHECK(pocketbyte_display_set_rotation(POCKETBYTE_DISPLAY_ROT_90));
+```
+
+In production firmware you may prefer to inspect the return value directly and handle errors gracefully:
+
+```c
+esp_err_t err = pocketbyte_audio_play_tone(440, 500);
+if (err != ESP_OK) {
+    ESP_LOGE("main", "Audio playback failed: %s", esp_err_to_name(err));
+}
+```
+
+Functions that return a value other than `esp_err_t` — for example, `pocketbyte_display_get_width()` which returns `int` — signal errors by returning a sentinel value documented on their individual reference page.
+
+## Naming Conventions
+
+The SDK follows two naming rules that apply uniformly across all subsystems:
+
+- **Functions and types** — every public symbol is prefixed with `pocketbyte_`. Subsystem-specific symbols add a second prefix, e.g. `pocketbyte_display_`, `pocketbyte_input_`, `pocketbyte_audio_`, `pocketbyte_system_`.
+- **Constants and macros** — every preprocessor constant is prefixed with `POCKETBYTE_` in upper snake case, e.g. `POCKETBYTE_DISPLAY_ROT_90`, `POCKETBYTE_COLOR_WHITE`.
+
+Following this convention in your own code helps prevent symbol collisions with ESP-IDF internals and third-party components.
+
+## Explore the Subsystem References
+
+<CardGroup cols={2}>
+  <Card title="Display — Initialization" icon="display" href="/api/display/init">
+    Initialize the display driver, set rotation, and query screen dimensions.
+  </Card>
+  <Card title="Input — Buttons" icon="gamepad" href="/api/input/buttons">
+    Read button state and respond to input module events.
+  </Card>
+  <Card title="Audio — Playback" icon="volume-high" href="/api/audio/playback">
+    Play tones and PCM samples through the Pocketbyte audio hardware.
+  </Card>
+  <Card title="System — Lifecycle" icon="microchip" href="/api/system/lifecycle">
+    Manage device init, sleep, storage, and hardware metadata.
+  </Card>
+</CardGroup>
