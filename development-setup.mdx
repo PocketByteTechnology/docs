@@ -1,18 +1,18 @@
 ---
 title: "Development Setup"
 sidebarTitle: "Development Setup"
-description: "Set up your Pocketbyte development environment, add the library component, and run your first application on the device in a few steps."
+description: "Everything you need to go from a fresh machine to building Pocketbyte apps."
 ---
 
-This guide walks you through everything you need to go from a fresh machine to a running Pocketbyte app. You'll install ESP-IDF, create a project, pull in the Pocketbyte library component, write a minimal application, and flash it to your device.
+This guide walks you through setting up your Pocketbyte development environment, adding the library component, and running your first application on the device in a few steps.
 
 ## Prerequisites
 
 Before you begin, make sure you have the following:
 
-- A **Pocketbyte DevKit** with a USB-C cable
-- **ESP-IDF** installed on your development machine ([installation guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/get-started/index.html))
-- A **terminal** with the IDF environment sourced (`idf.py` available on your `PATH`)
+- A Pocketbyte DevKit
+- A USB-C cable
+- A Windows, macOS, or Linux computer
 
 ## Steps
 
@@ -31,8 +31,16 @@ Before you begin, make sure you have the following:
     ```
 
     You should see output similar to `ESP-IDF v5.x.x`. If you see an error, make sure the environment is sourced correctly before continuing.
+
+    <Tip>
+      VSCode has an official ESP-IDF extension that will install everything you need automatically. If the install process above is too complicated for you, just install this extension instead! After installing the extension, can use the ESP-IDF even without VSCode.
+    </Tip>
+
+    <Note>
+      If you are on Windows, you can directly proceed with this step using WSL 2. If you do not want to use WSL2, your best option is to use the VSCode extension.
+    </Note>
   </Step>
-  <Step title="Create a new IDF project">
+  <Step title="Create a new ESP-IDF project">
     Create a new ESP-IDF project using the `idf.py create-project` command. This sets up the standard directory structure including `main/`, `CMakeLists.txt`, and the required `idf_component.yml` manifest.
 
     ```bash
@@ -47,13 +55,13 @@ Before you begin, make sure you have the following:
     ```
   </Step>
   <Step title="Add the Pocketbyte component">
-    From inside your project directory, add the Pocketbyte SDK as a managed component. The IDF component manager will fetch the latest compatible version and add it to your project's dependency manifest automatically.
+    From inside your project directory, add the Pocketbyte library as a managed component. The ESP-IDF component manager will fetch the latest compatible version and add it to your project's dependency manifest automatically.
 
     ```bash
     idf.py add-dependency "omrawaley/pocketbyte"
     ```
 
-    You'll see the component listed in `main/idf_component.yml` after this command completes. The SDK source is downloaded automatically during the next build.
+    You'll see the component listed in `main/idf_component.yml` after this command completes. The library source is downloaded automatically during the next build.
   </Step>
   <Step title="Write a minimal main.c">
     Open `main/main.c` and replace its contents with the following minimal application. This initializes the Pocketbyte hardware and enters a simple loop that reads input and updates the display.
@@ -95,17 +103,16 @@ Before you begin, make sure you have the following:
     This is the minimal structure for a Pocketbyte app: initialize once, then loop indefinitely reading input and updating the display.
   </Step>
   <Step title="Build and flash to your device">
-    Connect your Pocketbyte to your computer via USB. Build the project, flash it to the device, and open the serial monitor with a single combined command:
+    Connect your Pocketbyte to your computer via USB. Build the project and flash it to the device.
 
     ```bash
-    idf.py build
-    idf.py -p /dev/ttyUSB0 flash monitor
+    idf.py build && idf.py flash
     ```
 
-    Replace `/dev/ttyUSB0` with the correct port for your system (for example, `COM3` on Windows or `/dev/cu.usbserial-0001` on macOS). The device will reset after flashing and your app will start running immediately.
+     The device will reset after flashing and your app will start running immediately.
   </Step>
 </Steps>
 
 <Tip>
-  Use `idf.py -p /dev/ttyUSB0 monitor` (without `flash`) at any time to reconnect to the serial output of an already-flashed device. This is useful for reading debug output from `printf` statements in your app without reflashing. Press `Ctrl+]` to exit the monitor.
+  Use `idf.py monitor` at any time to reconnect to the serial output of an already-flashed device. This is useful for reading debug output from `printf` statements in your app without reflashing. Press `Ctrl+]` to exit the monitor.
 </Tip>
