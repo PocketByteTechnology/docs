@@ -4,9 +4,17 @@ sidebarTitle: "Introduction"
 description: "Learn what it is, who it's for, and how to get building."
 ---
 
-Pocketbyte is a handheld indie computer built on the ESP32-S3 microcontroller. It features a built-in ST7789 display, stereo audio output w/ headphone jack, USB-C 2.0 connectivity, and — most distinctively — a swappable input module system that lets you attach different physical controllers to suit your game or application. 
+<Frame caption="Pocketbyte DevKit">
+  <img
+    src="/images/PocketbyteDevKit.png"
+    alt="Pocketbyte Dev Kit"
+    title="Pocketbyte Dev Kit"
+    className="mx-auto"
+    style={{ width:"29%" }}
+  />
+</Frame>
 
-Instead of locking you into a fixed button layout, Pocketbyte is designed to be hacked, reprogrammed, and reimagined. The software you run on it is entirely your own. And you are free to build your own controller modules, too.
+Pocketbyte is a modular handheld indie computer that can be used as a game console, PDA, music player, and much more. You can run apps made by others and build your own. It also has a modular controller port meaning you can swap between gamepads, keyboards, and more.
 
 ## Who It's For
 
@@ -53,9 +61,30 @@ Because Pocketbyte is open-source, your software is only limited by the hardware
 
 These docs are organized to take you from unboxing to building:
 
-- **Quickstart** — get your toolchain set up and your first app running on the device.
-- **Hardware Overview** — understand the processor, display, input system, audio, and connectivity.
-- **Guides** — step-by-step walkthroughs for common tasks, starting with building your first game.
-- **API Reference** — complete documentation for every function in the Pocketbyte C SDK.
+<Columns cols={2}>
+  <Column>
+    <Card title="Quickstart" icon="fast-forward">
+      Get your toolchain set up and your first app running on the device.
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Hardware Overview" icon="circuit-board">
+      Understand the processor, display, input system, audio, and connectivity.
+    </Card>
+  </Column>
+</Columns>
+
+<Columns cols={2}>
+  <Column>
+    <Card title="Guides" icon="book-copy">
+      Step-by-step walkthroughs for common tasks, like building your first game.
+    </Card>
+  </Column>
+  <Column>
+    <Card title="API Reference" icon="list">
+      Complete documentation for every function in the Pocketbyte C SDK.
+    </Card>
+  </Column>
+</Columns>
 
 Start with the [Quickstart](/quickstart) if you want to get something running right away, or read the [Hardware Overview](/hardware-overview) if you want to understand the platform before you write a single line of code.
