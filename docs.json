@@ -109,7 +109,8 @@
               "api/system/storage"
             ]
           }
-        ]
+        ],
+        "hidden": true
       }
     ]
   },
