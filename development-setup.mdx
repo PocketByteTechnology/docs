@@ -64,43 +64,16 @@ Before you begin, make sure you have the following:
     You'll see the component listed in `main/idf_component.yml` after this command completes. The library source is downloaded automatically during the next build.
   </Step>
   <Step title="Write a minimal main.c">
-    Open `main/main.c` and replace its contents with the following minimal application. This initializes the Pocketbyte hardware and enters a simple loop that reads input and updates the display.
+    Open `main/main.c` and replace its contents with the following minimal program. This tests to see if the library can be linked properly and if the code can execute without any runtime errors.
 
     ```c
-    #include <stdio.h>
-    #include "pocketbyte.h"
+    #include <pocketbyte.h>
     
     void app_main(void)
     {
-        // Initialize the Pocketbyte hardware (display, input, audio)
-        pocketbyte_init();
-    
-        // Main application loop
-        while (1) {
-            // Read the current state of the input module
-            pocketbyte_input_t input = pocketbyte_input_read();
-    
-            // Clear the display buffer
-            pocketbyte_display_clear();
-    
-            // Draw a message to the screen
-            pocketbyte_display_print(0, 0, "Hello, Pocketbyte!");
-    
-            // If the primary button is pressed, show a response
-            if (input.button_a) {
-                pocketbyte_display_print(0, 16, "Button A pressed!");
-            }
-    
-            // Flush the buffer to the display
-            pocketbyte_display_flush();
-    
-            // Small delay to keep the loop at a reasonable rate
-            pocketbyte_delay_ms(16);
-        }
+        return 0;
     }
     ```
-
-    This is the minimal structure for a Pocketbyte app: initialize once, then loop indefinitely reading input and updating the display.
   </Step>
   <Step title="Build and flash to your device">
     Connect your Pocketbyte to your computer via USB. Build the project and flash it to the device.
