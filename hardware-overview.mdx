@@ -28,27 +28,29 @@ Pocketbyte runs on the **ESP32-S3**, Espressif's dual-core Xtensa LX7 IoT microc
 
 Key characteristics of the ESP32-S3:
 
-- **Dual-core Xtensa LX7** running at up to 240 MHz
-- **Wi-Fi (802.11 b/g/n)** and **Bluetooth 5 (LE)** built in
-- 512 KB of SRAM plus 16 MB of built-in PSRAM accessed via the internal octal SPI bus
+- **Dual-core** Xtensa LX7 running at up to 240 MHz
+- **Wi-Fi (802.11 b/g/n)** and **Bluetooth 5** (LE) built in
+- **ESP-NOW** lightweight P2P wireless communication protocol
+- 512 KB of SRAM plus **16 MB** of built-in PSRAM accessed via the internal octal SPI bus
 - Hardware acceleration for common operations, including vector instructions useful for graphics and signal processing
 - Rich peripheral set: SPI, I2C, UART, I2S, ADC, and more
+- Plenty of open-source projects existing on the web, meaning **incredible software compatibility**
 
 The Pocketbyte library targets the ESP32-S3 specifically. When you set up your IDF project, always set the target to `esp32s3` to ensure the correct toolchain, memory layout, and peripheral configuration are applied.
 
 ## Display
 
-Pocketbyte includes a 320x240 ST7789V IPS display driven via SPI. It can achieve well over 60 Hz and can display any RGB565 color. The DevKits also expose the display's Tearing Enable (TE) pin, so you can enable "fake" VSync to help reduce screen tearing.
+Pocketbyte includes a **320x240 ST7789V IPS display** driven via SPI. It can achieve well over 60 Hz and can display any RGB565 color. The DevKits also expose the display's Tearing Enable (TE) pin, so you can enable VSync to help reduce screen tearing.
 
 You interact with the display entirely through library calls — you don't need to configure display hardware or write low-level driver code unless you want to do some crazy hacking. 
 
 ## Input System / Modules
 
-The most distinctive feature of Pocketbyte is its **swappable input module system**. Rather than fixing a single control layout, Pocketbyte allows different physical input modules to be attached to the device. Each module provides a different control scheme — you might use a d-pad module for a platformer, a Blackberry keyboard module for synced note taking, or a custom configuration for a specialized application.
+The most distinctive feature of Pocketbyte is its **swappable input module system**. Rather than fixing a single control layout, Pocketbyte allows different physical input modules to be attached to the device. Each module provides a different control scheme — you might use a gamepad module for a platformer, a Blackberry keyboard module for synced note taking, or a custom configuration for a specialized application.
 
-<Warning>
+<Note>
   Design your program's input handling around the specific module you intend to use, and document which module your program requires.
-</Warning>
+</Note>
 
 ## Audio
 
@@ -62,7 +64,7 @@ Pocketbyte connects to your development machine via **USB-C**, which serves thre
 
 - **Flashing** — the USB connection is used by `idf.py flash` to program new firmware onto the device.
 - **Power** — the device is powered over USB during development, while it is plugged-in. This happens automatically.
-- **USB-OTG peripherals** — allows Pocketbyte to act as a USB host, enabling you to connect and use peripherals like wired keyboards and much more.
+- **USB-OTG peripherals** — Pocketbyte can act as a USB host, enabling you to connect and use USB peripherals like wired keyboards and much more.
 
 The USB connection also exposes a **serial (UART) interface** that you can use for debug output via `printf` and the ESP-IDF logging system. Monitor it with:
 
@@ -70,7 +72,7 @@ The USB connection also exposes a **serial (UART) interface** that you can use f
 idf.py monitor
 ```
 
-The ESP32-S3's **Wi-Fi and Bluetooth** radios are available for applications that need wireless connectivity. You can use the standard ESP-IDF Wi-Fi and BLE APIs alongside the Pocketbyte library in the same project.
+The ESP32-S3's **Wi-Fi and Bluetooth** radios are available for applications that need wireless connectivity. You can use the standard ESP-IDF Wi-Fi, BLE, and ESP-NOW APIs alongside the Pocketbyte library in the same project.
 
 <Note>
   Exact hardware specifications — including display resolution, pinout assignments, battery capacity, and audio hardware details — are specific to your device revision. Refer to the documentation included in your Pocketbyte box or packaging for the precise specs that apply to your unit.
