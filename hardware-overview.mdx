@@ -6,6 +6,19 @@ description: "A complete hardware reference for Pocketbyte."
 
 Pocketbyte is built around capable, industry-standard hardware — the kind that gives you enough horsepower for real games and applications while keeping the platform simple enough to program in C. This page covers the major hardware subsystems: the processor, display, input system, audio output, and connectivity. Understanding the hardware will help you write better software, choose the right controller module for your project, and make the most of the library.
 
+## Component List
+
+| **Component** | **Description** |
+| --- | --- |
+| 2.8" 320x240 ST7789V IPS display | Pocketbyte's 240p display. It has great viewing <br />angles due to it being IPS. |
+| ESP32-S3-WROOM-1-N16R8 | Dual-core Xtensa LX7 IoT MCU designed for <br />low-power wireless applications. It packs plenty of <br />punch with 16 MB of PSRAM. |
+| ICM-42670-P IMU | Ultra low-power 6-axis Inertial Measurement Unit<br />with accelerometer and gyroscope. |
+| USB-C 2.0 Receptacle | Universal USB-C 2.0 port for charging and data<br />transfer. Includes USB-OTG functionality. |
+| microSD Card Slot | Large-scale data transfer and storage. Up to 32 GB<br />tested so far. |
+| PCM5102A | Stereo audio DAC. Produces audio line-out for the<br />entire device. |
+| TPA6110A2DGN | 150 mW stereo headphone amplifier. |
+| PAM8302AAS | 2.5 W Class-D mono audio amplifier. |
+
 ## Processor
 
 Pocketbyte runs on the **ESP32-S3**, Espressif's dual-core Xtensa LX7 IoT microcontroller. It offers substantial processing power, making it well-suited to running program logic, handling graphics updates, processing input, and managing audio simultaneously.
