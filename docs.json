@@ -57,13 +57,6 @@
             ]
           },
           {
-            "group": "Configuration",
-            "pages": [
-              "configuration/project-setup",
-              "configuration/build-flash"
-            ]
-          },
-          {
             "group": "Help",
             "pages": [
               "troubleshooting",
