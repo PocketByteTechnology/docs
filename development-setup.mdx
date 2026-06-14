@@ -88,8 +88,21 @@ Before you begin, make sure you have the following:
       If the flash command times out waiting for the device to enter download mode, hold the **BOOT** button on Pocketbyte, then press and release the **RESET** button while keeping BOOT held, then release BOOT. The device will enter flash mode and the command will proceed.
     </Tip>
   </Step>
-</Steps>
+  <Step title="Build and flash to your device">
+    Connect your Pocketbyte to your computer via USB. Build the project and flash it to the device.
 
-<Tip>
-  Use `idf.py monitor` at any time to reconnect to the serial output of an already-flashed device. This is useful for reading debug output from `printf` statements in your app without reflashing. Press `Ctrl+]` to exit the monitor.
-</Tip>
+    ```bash
+    idf.py build && idf.py flash
+    ```
+
+    The device will reset after flashing and your app will start running immediately.
+
+    <Tip>
+      If the flash command times out waiting for the device to enter download mode, hold the **BOOT** button on Pocketbyte, then press and release the **RESET** button while keeping BOOT held, then release BOOT. The device will enter flash mode and the command will proceed.
+    </Tip>
+
+    <Tip>
+      Use `idf.py monitor` at any time to reconnect to the serial output of an already-flashed device. This is useful for reading debug output from `printf` statements in your app without reflashing. Press `Ctrl+]` to exit the monitor.
+    </Tip>
+  </Step>
+</Steps>
