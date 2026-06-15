@@ -45,7 +45,8 @@
               "concepts/display",
               "concepts/input",
               "concepts/audio"
-            ]
+            ],
+            "hidden": true
           },
           {
             "group": "Guides",
