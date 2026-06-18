@@ -1,6 +1,6 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "linden",
+  "theme": "luma",
   "name": "Pocketbyte",
   "colors": {
     "primary": "#fab81e",
