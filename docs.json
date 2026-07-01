@@ -53,6 +53,12 @@
             "pages": []
           },
           {
+            "group": "Misc",
+            "pages": [
+              "rust"
+            ]
+          },
+          {
             "group": "Help",
             "pages": [
               "troubleshooting",
