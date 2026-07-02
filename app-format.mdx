@@ -1,0 +1,67 @@
+---
+title: "App Bundle Format"
+description: "An overview on how apps are packaged on Pocketbyte."
+sidebarTitle: "App Format"
+---
+
+"Apps" on Pocketbyte are very similar to "app bundles" on macOS.
+
+Each Pocketbyte application is simply a folder with a few related files—no special formats are used.
+
+## Bundle Structure
+
+<Tree>
+  <Tree.Folder name="<author>.<title>">
+    <Tree.File name="info.json" />
+    <Tree.File name="image.bin" />
+    <Tree.File name="program.bin" />
+  </Tree.Folder>
+</Tree>
+
+- `<author>.<title>` is the grouping folder named after the unique ID of the application.
+- `info.json` is a manifest file that contains all of app's metadata, such as author, version, genre, and more.
+- `image.bin` is the 64x64 icon image, formatted in RGB565. It's good practice to include the raw PNG image too, just so that you can view it on your computer.
+- `program.bin` is the app's executable.
+
+### Info JSON
+
+The format for `info.json` is very simple.
+
+```json
+{
+    "id": "<author>.<title>",
+    "title": "Title",
+    "description": "Description",
+    "genre": "Genre",
+    "version": "Major.Minor.Patch",
+    "author": "Author",
+    "date": "YYYY-MM-DD",
+    "binary": "program.bin",
+    "image": "image.bin"
+}
+```
+
+### Example
+
+<Tree>
+  <Tree.Folder name="bobthecoder.cool-platformer">
+    <Tree.File name="CoolPlatformer.png" />
+    <Tree.File name="info.json" />
+    <Tree.File name="image.bin" />
+    <Tree.File name="program.bin" />
+  </Tree.Folder>
+</Tree>
+
+```json
+{
+    "id": "bobthecoder.cool-platformer",
+    "title": "Cool Platformer",
+    "description": "The coolest platformer game you will ever play!",
+    "genre": "Action",
+    "version": "1.0.Patch",
+    "author": "Author",
+    "date": "YYYY-MM-DD",
+    "binary": "program.bin",
+    "image": "image.bin"
+}
+```

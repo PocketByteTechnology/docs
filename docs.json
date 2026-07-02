@@ -53,6 +53,12 @@
             "pages": []
           },
           {
+            "group": "Packaging Apps",
+            "pages": [
+              "app-format"
+            ]
+          },
+          {
             "group": "Misc",
             "pages": [
               "rust"
