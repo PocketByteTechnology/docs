@@ -55,7 +55,8 @@
           {
             "group": "Packaging Apps",
             "pages": [
-              "app-format"
+              "app-format",
+              "app-store"
             ]
           },
           {
